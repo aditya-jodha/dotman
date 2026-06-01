@@ -1,0 +1,51 @@
+{
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "always"
+        }
+    },
+    "ruff.lint.enable": true,
+    "ruff.format.preview": true,
+    "ruff.lint.select": ["E","W","F","B","UP","FA","C4","SIM","RET","I","TID","TC","ARG","PTH","N","PD","NPY","PERF","DTZ","YTT","RUF","TRY","BLE","S","PLE","PLC","FURB"],
+    "ruff.exclude": [".venv", "venv", "__pycache__", "node_modules", "typings", "build", "dist"],
+    "ruff.lineLength": 100,
+    "python.analysis.typeCheckingMode": "strict",
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingTypeStubs": "none",
+        "reportUnknownMemberType": "none",
+        "reportUnknownVariableType": "none",
+        "reportUnknownArgumentType": "none",
+        "reportUnknownLambdaType": "none"
+    },
+    "files.associations": {
+        "*.csv": "csv"
+    },
+    "python.analysis.extraPaths": ["./My_Modules/Safe_Maths/src"],
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/node_modules/**": true,
+        "**/.venv/**": true,
+        "**/__pycache__/**": true,
+        "**/*_venv/**": true,
+        "**/lib/python*/**": true
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/.venv": true,
+        "**/__pycache__": true,
+        "**/*_venv": true,
+        "**/lib/python*": true
+    },
+    "python-envs.pythonProjects": [
+        {
+            "path": "CLI_tools",
+            "envManager": "ms-python.python:system",
+            "packageManager": "ms-python.python:pip"
+        }
+    ],
+}

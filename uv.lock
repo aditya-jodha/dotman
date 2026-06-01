@@ -23,13 +23,17 @@ wheels = [
 [[package]]
 name = "dotman"
 version = "0.1.0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
+    { name = "rich" },
     { name = "typer" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "typer", specifier = ">=0.26.4" }]
+requires-dist = [
+    { name = "rich", specifier = ">=15.0.0" },
+    { name = "typer", specifier = ">=0.26.4" },
+]
 
 [[package]]
 name = "markdown-it-py"
