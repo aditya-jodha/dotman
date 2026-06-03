@@ -1,7 +1,13 @@
 import tomllib
 from pathlib import Path
 
-from core.config import TEMP_LOG_FILE, StrPath
+from dotman.core.config import TEMP_LOG_FILE, StrPath
+
+
+def sanitize_package_name(package: StrPath) -> Path:
+    """Sanitizes the package name by replacing spaces with underscores and converting to lowercase."""  # noqa: E501
+    sanitized_package = str(package).replace(" ", "_").lower().strip()
+    return Path(sanitized_package.replace("/", "_").replace("\\", "_"))
 
 
 class LogBook:
@@ -61,13 +67,8 @@ class AddFiles:
         self.home_dir = home_dir
         self.dotfiles_dir = dotfiles_dir
         self.file = file
-        self.package = self._sanitize_package_name(package)
+        self.package = sanitize_package_name(package)
         self.log_book = logbook
-
-    def _sanitize_package_name(self, package: StrPath) -> Path:
-        """Sanitizes the package name by replacing spaces with underscores and converting to lowercase."""  # noqa: E501
-        sanitized_package = str(package).replace(" ", "_").lower().strip()
-        return Path(sanitized_package.replace("/", "_").replace("\\", "_"))
 
     @property
     def is_dir(self) -> bool:

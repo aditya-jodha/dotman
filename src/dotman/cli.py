@@ -5,16 +5,25 @@ from pathlib import Path
 
 import typer
 from rich.console import Console
+from rich.table import Table
 
-from core.config import DOTFILES_DIR, HOME_DIR
-from dotman.add import AddFiles, LogBook
+from dotman.core.add import AddFiles, LogBook
+from dotman.core.add import sanitize_package_name as _sanitize_package_name
+from dotman.core.config import DOTFILES_DIR, HOME_DIR
+from dotman.core.doctor import Doctor, DoctorStatus
+from dotman.core.initializer import Initializer
+from dotman.core.linker import Linker
 from dotman.tree_builder import print_beautiful_directory
-
-from .initializer import Initializer
 
 app = typer.Typer(help="A CLI tool to manage your dotfiles.", no_args_is_help=True)
 
 console = Console()
+
+
+def _iter_package_files(package_dir: Path):
+    for path in package_dir.rglob("*"):
+        if path.is_file() or path.is_symlink():
+            yield path
 
 
 def _get_single_key_safe() -> str:
@@ -67,7 +76,7 @@ def init():
     console.print("Dotfiles directory setup completed.", style="green")
 
 
-@app.command(help="add a file to the dotfiles directory.")
+@app.command(help="Add a file to the dotfiles directory.")
 def add(
     file: Path,
     package_name: str | None = typer.Option(
@@ -152,9 +161,90 @@ def add(
         console.print("Invalid choice. No action taken.", style="red")
 
 
-@app.command(help="stow the files to the home directory.")
-def stow():
-    console.print("Stow command is not implemented yet.", style="yellow")
+@app.command(help="Sync dotfiles package links to the home directory.")
+def sync(
+    package_name: str | None = typer.Option(
+        None, "--package", help="Sync only this package. Syncs all packages by default."
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Show what would be linked without changing files."
+    ),
+):
+    if not DOTFILES_DIR.exists():
+        console.print(f"Dotfiles directory '{DOTFILES_DIR}' does not exist.", style="red")
+        return
+
+    if package_name is None:
+        package_dirs = sorted(path for path in DOTFILES_DIR.iterdir() if path.is_dir())
+    else:
+        package_dir = DOTFILES_DIR / _sanitize_package_name(package_name)
+        if not package_dir.exists() or not package_dir.is_dir():
+            console.print(f"Package '{package_name}' does not exist.", style="red")
+            return
+        package_dirs = [package_dir]
+
+    if not package_dirs:
+        console.print("No packages found to sync.", style="yellow")
+        return
+
+    linker = Linker(dry_run=dry_run, backup_dir=HOME_DIR / ".dotman_backup")
+    results = []
+
+    for package_dir in package_dirs:
+        for source in _iter_package_files(package_dir):
+            target = HOME_DIR / source.relative_to(package_dir)
+            results.append(linker.execute(source, target))
+
+    if not results:
+        console.print("No files found to sync.", style="yellow")
+        return
+
+    for result in results:
+        style = "green"
+        if result.status == "error":
+            style = "red"
+        elif result.status == "dry-run":
+            style = "cyan"
+        elif result.action in {"backup_and_link", "fix"}:
+            style = "yellow"
+
+        console.print(
+            f"{result.status}: {result.target} -> {result.source} ({result.action})",
+            style=style,
+        )
+
+    error_count = sum(result.status == "error" for result in results)
+    if error_count:
+        console.print(f"Sync completed with {error_count} error(s).", style="red")
+        raise typer.Exit(code=1)
+
+    console.print(f"Synced {len(results)} file(s).", style="green")
+
+
+@app.command(help="Give a full diagnostic report.")
+def doctor(detail: bool = typer.Option(False, "-a", "--all", help="Show detailed information.")):
+    doctor = Doctor(home_dir=HOME_DIR, dotfile_dir=DOTFILES_DIR, detail=detail)
+    table = Table(title="System Doctor Status Report", show_lines=True)
+
+    table.add_column("Check Name", justify="left", style="cyan", no_wrap=True)
+    table.add_column("Status", justify="center", no_wrap=True)
+    table.add_column("Message", justify="left", style="white")
+
+    checks = doctor.run_all()
+    for check in checks:
+        if check.status == DoctorStatus.OK:
+            status_style = f"[bold green]{check.status}[/bold green]"
+        elif check.status == DoctorStatus.WARN:
+            status_style = f"[bold yellow]{check.status}[/bold yellow]"
+        else:
+            status_style = f"[bold red]{check.status}[/bold red]"
+        table.add_row(check.name, status_style, check.message)
+
+    console.print(table)
+
+
+def setup():
+    pass
 
 
 if __name__ == "__main__":

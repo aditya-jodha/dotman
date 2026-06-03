@@ -3,7 +3,7 @@ import pathlib
 from rich import print
 from rich.tree import Tree
 
-from core.config import TEMP_LOG_FILE
+from dotman.core.config import TEMP_LOG_FILE
 
 
 def _add_to_tree(directory: pathlib.Path, tree_node: Tree) -> None:
