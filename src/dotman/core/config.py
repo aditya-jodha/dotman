@@ -17,4 +17,5 @@ class LogBookData:
     new_path: Path
 
 
+type EXITCODE = int
 type StrPath = str | Path

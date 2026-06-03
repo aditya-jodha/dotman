@@ -11,7 +11,7 @@ from dotman.core.add import AddFiles, LogBook
 from dotman.core.add import sanitize_package_name as _sanitize_package_name
 from dotman.core.config import DOTFILES_DIR, HOME_DIR
 from dotman.core.doctor import Doctor, DoctorStatus
-from dotman.core.initializer import Initializer
+from dotman.core.initializer import DotmanPackages, Initializer
 from dotman.core.linker import Linker
 from dotman.tree_builder import print_beautiful_directory
 
@@ -58,9 +58,7 @@ def init():
     initializer = Initializer(home_dir=DOTFILES_DIR.parent, dotfiles_dir=DOTFILES_DIR)
 
     if initializer.is_backup_exist:
-        console.print(
-            "Backup already exists. Please restore it before initializing again.", style="red"
-        )
+        console.print("Backup already exists. Please restore it before initializing again.", style="red")
         return
 
     if initializer.is_old_dotfiles_exist:
@@ -79,12 +77,14 @@ def init():
 @app.command(help="Add a file to the dotfiles directory.")
 def add(
     file: Path,
-    package_name: str | None = typer.Option(
-        None, "--package", help="The package name to which the file belongs."
-    ),
+    package_name: str | None = typer.Option(None, "--package", help="The package name to which the file belongs."),
 ):
     if package_name is None:
         console.print("Package name is required to add a file.", style="red")
+        return
+    if package_name == DotmanPackages.PACKAGES.value:
+        console.print("You cannot add a file to the 'packages' package.", style="red")
+        console.print("This directory is reserved for `dotman` internal use.", style="red")
         return
 
     log_book = LogBook()
@@ -99,25 +99,31 @@ def add(
 
     log_book.create_log()
 
+    if not addfile.file.exists():
+        console.print(f"File '{addfile.file}' not found.", style="red")
+        return
+
     if addfile.package_exists:
         console.print(
             f"Package '{addfile.package}' already exists. Adding file to the package...",
             style="green",
         )
     else:
-        console.print(
-            f"Package '{addfile.package}' does not exist. Creating package...", style="dim yellow"
-        )
+        console.print(f"Package '{addfile.package}' does not exist. Creating package...", style="dim yellow")
 
         addfile.create_package()
         console.print(f"Package '{addfile.package}' created successfully.", style="dim green")
 
     if addfile.is_dir:
+        # As move_dir_to_dotfiles & move_file_to_dotfiles can raise FileNotFoundError but as
+        # we check above so no need to put try/except block here
+
         addfile.move_dir_to_dotfiles()
         console.print(
             f"Directory '{addfile.file}' added to package '{addfile.package}' successfully.",
             style="dim green",
         )
+
     else:
         addfile.move_file_to_dotfiles()
         console.print(
@@ -125,6 +131,8 @@ def add(
             style="dim green",
         )
 
+    # Last confirmation before committing the changes, if user wants to restore the files then
+    # we will restore the files from the log
     console.print(
         "Please review the changes and if everything looks good then you can commit the changes.",
         style="yellow",
@@ -132,11 +140,9 @@ def add(
     created_tree = print_beautiful_directory(str(DOTFILES_DIR))
     console.print(created_tree)
 
-    # Last confirmation before committing the changes, if user wants to restore the files then
-    # we will restore the files from the log
     while True:
         console.print(
-            "Press [bold green](y)[/] to commit the changes or [bold red](n)[/] to restore the files: ",  # noqa: E501
+            "Press [bold green](y)[/] to commit the changes or [bold red](n)[/] to restore the files: ",
             end="",
         )
         choice = _get_single_key_safe()
@@ -149,13 +155,19 @@ def add(
         if choice == "n":
             log_book.restore_files()
             console.print("Files restored successfully.", style="yellow")
-            if addfile.package_exists and not addfile.has_files_in_package():
+            if addfile.package_exists:
                 # If the package directory is empty after restoring files, we can remove it
-                (DOTFILES_DIR / addfile.package).rmdir()
-                console.print(
-                    f"Package '{addfile.package}' was empty after restoring files and has been removed.",  # noqa: E501
-                    style="yellow",
-                )
+                exit_code = addfile.delete_empty_package()
+                if exit_code == 0:
+                    console.print(
+                        f"Package '{addfile.package}' was empty after restoring files and has been removed.",
+                        style="yellow",
+                    )
+                else:
+                    console.print(
+                        f"Package '{addfile.package}' was not empty after restoring files.",
+                        style="yellow",
+                    )
             break
 
         console.print("Invalid choice. No action taken.", style="red")
@@ -166,9 +178,7 @@ def sync(
     package_name: str | None = typer.Option(
         None, "--package", help="Sync only this package. Syncs all packages by default."
     ),
-    dry_run: bool = typer.Option(
-        False, "--dry-run", help="Show what would be linked without changing files."
-    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be linked without changing files."),
 ):
     if not DOTFILES_DIR.exists():
         console.print(f"Dotfiles directory '{DOTFILES_DIR}' does not exist.", style="red")
@@ -243,7 +253,7 @@ def doctor(detail: bool = typer.Option(False, "-a", "--all", help="Show detailed
     console.print(table)
 
 
-def setup():
+def dump():
     pass
 
 

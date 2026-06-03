@@ -1,4 +1,18 @@
 {
+    "editor.inlineSuggest.enabled": true,
+    "editor.quickSuggestions": {
+        "other": true,
+        "comments": true,
+        "strings": true
+    },
+    "github.copilot.enable": {
+        "*": false,
+        "plaintext": true,
+        "markdown": true,
+        "scminput": false,
+        "python": false,
+        "yaml": true
+    },
     "python-envs.defaultEnvManager": "ms-python.python:system",
     "[python]": {
         "editor.defaultFormatter": "charliermarsh.ruff",
@@ -11,7 +25,7 @@
     "ruff.format.preview": true,
     "ruff.lint.select": ["E","W","F","B","UP","FA","C4","SIM","RET","I","TID","TC","ARG","PTH","N","PD","NPY","PERF","DTZ","YTT","RUF","TRY","BLE","S","PLE","PLC","FURB"],
     "ruff.exclude": [".venv", "venv", "__pycache__", "node_modules", "typings", "build", "dist"],
-    "ruff.lineLength": 100,
+    "ruff.lineLength": 120,
     "python.analysis.typeCheckingMode": "strict",
     "python.analysis.autoImportCompletions": true,
     "python.analysis.diagnosticSeverityOverrides": {
@@ -47,5 +61,5 @@
             "envManager": "ms-python.python:system",
             "packageManager": "ms-python.python:pip"
         }
-    ],
+    ]
 }

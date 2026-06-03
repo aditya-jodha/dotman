@@ -1,11 +1,11 @@
 import tomllib
 from pathlib import Path
 
-from dotman.core.config import TEMP_LOG_FILE, StrPath
+from dotman.core.config import EXITCODE, TEMP_LOG_FILE, StrPath
 
 
 def sanitize_package_name(package: StrPath) -> Path:
-    """Sanitizes the package name by replacing spaces with underscores and converting to lowercase."""  # noqa: E501
+    """Sanitizes the package name by replacing spaces with underscores and converting to lowercase."""
     sanitized_package = str(package).replace(" ", "_").lower().strip()
     return Path(sanitized_package.replace("/", "_").replace("\\", "_"))
 
@@ -54,7 +54,8 @@ class LogBook:
 
 
 class AddFiles:
-    """Class to handle adding files to the dotfiles directory."""
+    """Class to handle adding files to the dotfiles directory.\n
+    NOTE: PACKAGE SHOULD NOT BE NAME AS THE INTERNAL DOTMAN DIRECTORY i.e. `packages`"""
 
     def __init__(
         self,
@@ -67,7 +68,10 @@ class AddFiles:
         self.home_dir = home_dir
         self.dotfiles_dir = dotfiles_dir
         self.file = file
+
         self.package = sanitize_package_name(package)
+
+        self.destination = self.dotfiles_dir / self.package / self.file.relative_to(self.home_dir)
         self.log_book = logbook
 
     @property
@@ -84,6 +88,20 @@ class AddFiles:
         pkg_to_create = self.dotfiles_dir / self.package
         pkg_to_create.mkdir(parents=True, exist_ok=False)
 
+    def delete_empty_package(self) -> EXITCODE:
+        """Deletes empty package in the dotfiles directory."""
+        current = self.destination.parent
+
+        while current != self.dotfiles_dir:
+            if any(item.is_dir() for item in current.iterdir()):
+                break
+
+            current.rmdir()
+            current = current.parent
+        else:
+            return 0
+        return 1
+
     def move_dir_to_dotfiles(self):
         """Moves the specified directory to the dotfiles directory.
         by creating a dir into dotfiles named as package"""
@@ -96,24 +114,22 @@ class AddFiles:
         if not self.file.exists():
             raise FileNotFoundError(self.file)
 
-        destination = self.dotfiles_dir / self.package / self.file.relative_to(self.home_dir)
-
         # Writes log for backup
-        self.log_book.write_log(self.file, destination)
+        self.log_book.write_log(self.file, self.destination)
 
         # Ensure the parent directory of the destination exists before moving the file
-        destination.parent.mkdir(parents=True, exist_ok=True)
+        self.destination.parent.mkdir(parents=True, exist_ok=True)
 
         # Move the file to the destination
-        self.file.rename(destination)
+        self.file.rename(self.destination)
 
     def file_exists_in_package(self) -> bool:
-        """Checks if the file already exists in the package directory."""
+        """Checks if the file exists in the package directory."""
         return (self.dotfiles_dir / self.package / self.file.relative_to(self.home_dir)).exists()
 
-    def has_files_in_package(self):
+    def has_files_in_package(self, pkg: str | None = None) -> bool:
         """Checks if the log file has any entries for files in the package."""
-        path = Path(self.dotfiles_dir / self.package)
+        path = Path(self.dotfiles_dir / pkg) if pkg else Path(self.dotfiles_dir / self.package)
 
         # Returns True if at least one item inside is a regular file
         return any(item.is_file() for item in path.iterdir())

@@ -1,4 +1,10 @@
+from enum import Enum
 from pathlib import Path
+
+
+class DotmanPackages(Enum):
+    PACKAGES = "packages"
+    META = "metadata.json"
 
 
 class Initializer:
@@ -30,5 +36,9 @@ class Initializer:
     def setup(self):
         """Sets up the dotfiles directory by creating some default files."""
         # MetaData file
-        meta_file = self.dotfiles_dir / "metadata.json"
+        meta_file = self.dotfiles_dir / DotmanPackages.META.value
         meta_file.touch()
+
+        # Packages directory
+        packages_dir = self.dotfiles_dir / DotmanPackages.PACKAGES.value
+        packages_dir.mkdir()
