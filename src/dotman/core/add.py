@@ -1,7 +1,23 @@
 import tomllib
+from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 
 from dotman.core.config import EXITCODE, TEMP_LOG_FILE, StrPath
+
+
+@dataclass
+class SymlinkCheck:
+    path: Path
+    status: str
+    message: str
+
+
+class SymlinkStatus(Enum):
+    OK = "ok"
+    WARN = "warn"
+    ERROR = "error"
+    SKIP = "skip"
 
 
 def sanitize_package_name(package: StrPath) -> Path:
@@ -133,3 +149,36 @@ class AddFiles:
 
         # Returns True if at least one item inside is a regular file
         return any(item.is_file() for item in path.iterdir())
+
+    def scan_symlinks(self) -> list[SymlinkCheck]:
+        checks: list[SymlinkCheck] = []
+
+        if self.file.is_symlink():
+            paths = [self.file]
+            root = self.file.parent.resolve()
+        elif self.file.is_dir():
+            paths = self.file.rglob("*")
+            root = self.file.resolve()
+        else:
+            return checks
+
+        for path in paths:
+            if not path.is_symlink():
+                continue
+
+            if not path.exists():
+                checks.append(SymlinkCheck(path, SymlinkStatus.ERROR.value, "broken symlink"))
+                continue
+
+            try:
+                target = path.resolve()
+            except RuntimeError:
+                checks.append(SymlinkCheck(path, SymlinkStatus.ERROR.value, "symlink loop"))
+                continue
+
+            if not target.is_relative_to(root):
+                checks.append(SymlinkCheck(path, SymlinkStatus.ERROR.value, f"points outside added path: {target}"))
+            else:
+                checks.append(SymlinkCheck(path, SymlinkStatus.OK.value, f"points inside added path: {target}"))
+
+        return checks
