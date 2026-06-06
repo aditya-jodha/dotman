@@ -2,7 +2,7 @@ import sys
 
 from rich.console import Console
 
-from dotman.cli.app.main import app
+from dotman.cli.app.root import app
 from dotman.cli.config.main import config_app
 
 app.add_typer(config_app, name="config", help="Manage dotman configuration.")

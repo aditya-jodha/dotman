@@ -3,14 +3,16 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-from dotman.core.config import EXITCODE, TEMP_LOG_FILE, StrPath
-
-
-@dataclass
-class SymlinkCheck:
-    path: Path
-    status: str
-    message: str
+from dotman.core.config import EXITCODE, InternalFileSystemObject, StrPath, load_config, make_temp_log_file
+from dotman.errors.custom_errors_of_add import (
+    FileDoesNotExistError,
+    FileNameCollidingError,
+    InvalidPackageNameError,
+    IsNotASubPathError,
+    SymFileCameInAddFilesLogicError,
+    TargetFileIsDotfilesDirError,
+    TargetFileIsHomeError,
+)
 
 
 class SymlinkStatus(Enum):
@@ -20,10 +22,11 @@ class SymlinkStatus(Enum):
     SKIP = "skip"
 
 
-def sanitize_package_name(package: StrPath) -> Path:
-    """Sanitizes the package name by replacing spaces with underscores and converting to lowercase."""
-    sanitized_package = str(package).replace(" ", "_").lower().strip()
-    return Path(sanitized_package.replace("/", "_").replace("\\", "_"))
+@dataclass
+class SymlinkCheck:
+    path: Path
+    status: SymlinkStatus
+    message: str
 
 
 class LogBook:
@@ -31,7 +34,8 @@ class LogBook:
     restore the files if something goes wrong."""
 
     def __init__(self, log_file: StrPath | None = None):
-        self.log_file = Path(log_file) if log_file else TEMP_LOG_FILE
+        self.cgf = load_config()
+        self.log_file = Path(log_file) if log_file else make_temp_log_file(self.cgf)
 
     def clear_log(self):
         """Clears the log file."""
@@ -78,26 +82,61 @@ class AddFiles:
         home_dir: Path,
         dotfiles_dir: Path,
         file: Path,
-        package: StrPath,
+        package: str,
         logbook: LogBook,
     ):
-        self.home_dir = home_dir
-        self.dotfiles_dir = dotfiles_dir
-        self.file = file
+        self.home_dir = home_dir.resolve()
+        self.dotfiles_dir = dotfiles_dir.resolve()
+        self.file = file.resolve(strict=False)
+        self.original_file = file
+        self.package = package  # Assumed that @src/dotman/core/service/add_service.py sanitizes the package name
+        self.log_book = logbook
 
-        self.package = sanitize_package_name(package)
-
-        self.destination = self.dotfiles_dir / self.package / self.file.relative_to(self.home_dir)
         self.log_book = logbook
 
     @property
     def is_dir(self) -> bool:
+        """Checks if the file is a directory."""
         return self.file.is_dir()
 
     @property
     def package_exists(self) -> bool:
         """Checks if the package directory exists in the dotfiles directory."""
         return (self.dotfiles_dir / self.package).exists()
+
+    def is_file_in_package(self):
+        """Check name collision."""
+        return self.destination.exists() or self.destination.is_symlink()
+
+    def validate(self) -> None:
+        """This validates all the senario, and make destination class instance."""
+        # Order matters for user to get a reasonable answer.
+        # NOTE: whenever new error added here, need to update the service_add.py file as well.
+        if self.file == self.home_dir:
+            raise TargetFileIsHomeError(self.file)
+        if self.file == self.dotfiles_dir:
+            raise TargetFileIsDotfilesDirError(self.file)
+
+        if self.original_file.is_symlink():
+            raise SymFileCameInAddFilesLogicError()
+
+        if not self.file.exists():
+            raise FileDoesNotExistError(self.file)
+
+        if not self.file.is_relative_to(self.home_dir):
+            raise IsNotASubPathError(self.home_dir)
+
+        if self.package == "":
+            raise InvalidPackageNameError(self.package.__str__(), False)
+
+        if str(self.package) in InternalFileSystemObject.values():
+            raise InvalidPackageNameError(self.package.__str__(), True)
+
+        rel_path = self.file.relative_to(self.home_dir)
+        self.destination = self.dotfiles_dir / self.package / rel_path
+
+        if self.is_file_in_package():
+            raise FileNameCollidingError(self.file)
 
     def create_package(self):
         """Creates the directory inside dotfiles"""
@@ -118,17 +157,15 @@ class AddFiles:
             return 0
         return 1
 
-    def move_dir_to_dotfiles(self):
+    def move_dir_to_dotfiles(self) -> EXITCODE:
         """Moves the specified directory to the dotfiles directory.
         by creating a dir into dotfiles named as package"""
         # since we are moving the whole directory, we will move it to the package directory directly
-        self.move_file_to_dotfiles()
+        return self.move_file_to_dotfiles()
 
-    def move_file_to_dotfiles(self):
+    def move_file_to_dotfiles(self) -> EXITCODE:
         """Moves the specified file to the dotfiles directory.
         by creating a dir into dotfiles named as package"""
-        if not self.file.exists():
-            raise FileNotFoundError(self.file)
 
         # Writes log for backup
         self.log_book.write_log(self.file, self.destination)
@@ -138,6 +175,7 @@ class AddFiles:
 
         # Move the file to the destination
         self.file.rename(self.destination)
+        return 0
 
     def file_exists_in_package(self) -> bool:
         """Checks if the file exists in the package directory."""
@@ -150,9 +188,11 @@ class AddFiles:
         # Returns True if at least one item inside is a regular file
         return any(item.is_file() for item in path.iterdir())
 
-    def scan_symlinks(self) -> list[SymlinkCheck]:
+    def validate_directory_symlinks(self) -> list[SymlinkCheck]:
+        """
+        Scans the file or directory for symlinks and returns a list of SymlinkCheck objects.
+        """
         checks: list[SymlinkCheck] = []
-
         if self.file.is_symlink():
             paths = [self.file]
             root = self.file.parent.resolve()
@@ -167,18 +207,18 @@ class AddFiles:
                 continue
 
             if not path.exists():
-                checks.append(SymlinkCheck(path, SymlinkStatus.ERROR.value, "broken symlink"))
+                checks.append(SymlinkCheck(path, SymlinkStatus.ERROR, "broken symlink"))
                 continue
 
             try:
                 target = path.resolve()
             except RuntimeError:
-                checks.append(SymlinkCheck(path, SymlinkStatus.ERROR.value, "symlink loop"))
+                checks.append(SymlinkCheck(path, SymlinkStatus.ERROR, "symlink loop"))
                 continue
 
             if not target.is_relative_to(root):
-                checks.append(SymlinkCheck(path, SymlinkStatus.ERROR.value, f"points outside added path: {target}"))
+                checks.append(SymlinkCheck(path, SymlinkStatus.ERROR, f"points outside added path: {target}"))
             else:
-                checks.append(SymlinkCheck(path, SymlinkStatus.OK.value, f"points inside added path: {target}"))
+                checks.append(SymlinkCheck(path, SymlinkStatus.OK, f"points inside added path: {target}"))
 
         return checks

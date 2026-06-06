@@ -3,7 +3,7 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-from dotman.core.add import sanitize_package_name
+from dotman.cli.common_func import sanitize_package_name
 from dotman.core.linker import Linker, LinkResult
 
 console = Console()
@@ -33,7 +33,7 @@ def sync(dotfiles_dir: Path, home_dir: Path, package_name: str | None, dry_run: 
         console.print("No packages found to sync.", style="yellow")
         return
 
-    linker = Linker(dry_run=dry_run, backup_dir=home_dir / ".dotman_backup")
+    linker = Linker(dry_run=dry_run, home_dir=home_dir, backup_dir=home_dir / ".dotman_backup")
     results: list[LinkResult] = []
 
     for package_dir in package_dirs:

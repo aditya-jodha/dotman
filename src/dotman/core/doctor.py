@@ -96,7 +96,7 @@ class Doctor:
             return SymlinkStatus.NOT_A_SYMLINK
 
         if target.resolve() != source.resolve():
-            # symlink points to wrong source
+            # symlink of target points to wrong source
             return SymlinkStatus.WRONG_SOURCE
 
         # If everything is fine
@@ -206,10 +206,17 @@ class Doctor:
 
         return checks
 
-    def check_permissions(self) -> DoctorCheck:
+    def check_permissions_dotfiles(self) -> DoctorCheck:
         if not os.access(self.dotfiles_dir, os.W_OK):
             return DoctorCheck(
                 name="Permissions", status=DoctorStatus.ERROR, message=f"No write permission for {self.dotfiles_dir}"
+            )
+        return DoctorCheck(name="Permissions", status=DoctorStatus.OK, message="Permissions look fine.")
+
+    def check_permissions_home(self) -> DoctorCheck:
+        if not os.access(self.home_dir, os.W_OK):
+            return DoctorCheck(
+                name="Permissions", status=DoctorStatus.ERROR, message=f"No write permission for {self.home_dir}"
             )
         return DoctorCheck(name="Permissions", status=DoctorStatus.OK, message="Permissions look fine.")
 
@@ -230,7 +237,8 @@ class Doctor:
         checks.append(self.valid_dir)
 
         if self.valid_dir.status != DoctorStatus.ERROR:
-            checks.append(self.check_permissions())
+            checks.append(self.check_permissions_dotfiles())
+            checks.append(self.check_permissions_home())
             checks.extend(self.package_check())
             checks.extend(self.is_symlinked())
 

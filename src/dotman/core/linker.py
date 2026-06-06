@@ -31,11 +31,12 @@ class LinkResult:
 
 
 class Linker:
-    def __init__(self, dry_run: bool = False, backup_dir: Path = Path(".dotman_backup")):
+    def __init__(self, home_dir: Path, backup_dir: Path, dry_run: bool = False):
+        self.home_dir = home_dir
         self.dry_run = dry_run
         self.backup_dir = Path(backup_dir).expanduser()
         if not self.backup_dir.is_absolute():
-            self.backup_dir = Path.home() / self.backup_dir
+            self.backup_dir = home_dir / self.backup_dir
         if not self.dry_run:
             self.backup_dir.mkdir(parents=True, exist_ok=True)
 

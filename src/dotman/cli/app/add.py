@@ -5,9 +5,9 @@ from pathlib import Path
 
 from rich.console import Console
 
-from dotman.cli.tree_builder import print_beautiful_directory
-from dotman.core.add import AddFiles, LogBook, SymlinkStatus
-from dotman.core.config import InternalFileSystemObject
+from dotman.cli.common_func import check_file_exists
+from dotman.core.add import SymlinkStatus
+from dotman.core.service.add_service import AddErrors, AddService
 
 console = Console()
 
@@ -52,71 +52,89 @@ def add(
     file: Path,
     package_name: str | None,
 ):
+    # Resolve the file path
+    resolved_file = file.expanduser()
+    if not resolved_file.is_absolute():
+        resolved_file = Path.cwd() / resolved_file
+    resolved_home = home_dir.resolve(strict=False)
+
+    if not check_file_exists(resolved_home, dotfiles_dir):
+        # This checks the home directory and dotfiles directory correctly
+        return
+
+    # Core dose't validate CLI argument problems.
     if package_name is None:
         console.print("Package name is required to add a file.", style="red")
         return
-    if package_name == InternalFileSystemObject.PACKAGES.value:
-        console.print("You cannot add a file to the 'packages' package.", style="red")
-        console.print("This directory is reserved for `dotman` internal use.", style="red")
-        return
 
-    log_book = LogBook()
-
-    addfile = AddFiles(
+    add_service = AddService(
+        file=resolved_file,
+        package=package_name,
         home_dir=home_dir,
         dotfiles_dir=dotfiles_dir,
-        file=file,
-        package=package_name,
-        logbook=log_book,
     )
+    add_service.load()
 
-    sym_chech = addfile.scan_symlinks()
+    match add_service.service_validate():
+        case AddErrors.FileNotExists:
+            console.print(f"File '{file}' does not exist.", style="red")
+            return
+        case AddErrors.FileIsSymLink:
+            console.print(f"File '{file}' is a symlink.", style="red")
+            return
+        case AddErrors.NotASubPath:
+            console.print(f"File '{file}' is not a subpath of '{home_dir}'.", style="red")
+            return
+        case AddErrors.InvalidPackage:
+            console.print(f"Package '{package_name}' is invalid.", style="red")
+            return
+        case AddErrors.TargetIsHome:
+            console.print(f"Target file `{add_service.file}` is home directory path.", style="Red")
+            return
+        case AddErrors.TargetIsDotfilesDir:
+            console.print(f"Target file `{add_service.file}` is dotfiles directory path", style="Red")
+        case AddErrors.FileNameCollidingError:
+            console.print(f"File name `{file.name}` exists in dotfiles directory", style="Red")
+        case None:
+            # None means everything is fine.
+            pass
+
+    sym_chech = add_service.validate_directory_symlinks()
 
     for check in sym_chech:
-        if check.status == SymlinkStatus.WARN.value:
+        if check.status == SymlinkStatus.WARN:
             console.print(check.message, style="yellow")
             console.print("Do you want to continue? [y/n]: ", style="yellow", end="")
             if not get_user_choice():
                 console.print("Operation cancelled by user.", style="red")
                 return
 
-        elif check.status == SymlinkStatus.ERROR.value:
+        elif check.status == SymlinkStatus.ERROR:
             console.print(check.message, style="red")
             return
 
-    log_book.create_log()
-
-    if not addfile.file.exists():
-        console.print(f"File '{addfile.file}' not found.", style="red")
-        return
-
-    if addfile.package_exists:
-        console.print(
-            f"Package '{addfile.package}' already exists. Adding file to the package...",
-            style="green",
-        )
+    if add_service.create_reuse_package():
+        console.print(f"Package exist transfereing {add_service.add_files.file}", style="dim green")
     else:
-        console.print(f"Package '{addfile.package}' does not exist. Creating package...", style="dim yellow")
-
-        addfile.create_package()
-        console.print(f"Package '{addfile.package}' created successfully.", style="dim green")
-
-    if addfile.is_dir:
+        console.print("Package not found created new package", style="dim green")
         # As move_dir_to_dotfiles & move_file_to_dotfiles can raise FileNotFoundError but as
         # we check above so no need to put try/except block here
 
-        addfile.move_dir_to_dotfiles()
-        console.print(
-            f"Directory '{addfile.file}' added to package '{addfile.package}' successfully.",
-            style="dim green",
-        )
+    if add_service.service_add_file():
+        if add_service.is_dir:
+            console.print(
+                f"Directory '{add_service.add_files.file}' added to package '{add_service.add_files.package}' successfully.",  # noqa: E501
+                style="dim green",
+            )
 
+        else:
+            console.print(
+                f"File '{add_service.add_files.file}' added to package '{add_service.add_files.package}' successfully.",
+                style="dim green",
+            )
     else:
-        addfile.move_file_to_dotfiles()
-        console.print(
-            f"File '{addfile.file}' added to package '{addfile.package}' successfully.",
-            style="dim green",
-        )
+        console.print("Failed to add file to package.", style="red")
+        return
 
     # Last confirmation before committing the changes, if user wants to restore the files then
     # we will restore the files from the log
@@ -124,7 +142,7 @@ def add(
         "Please review the changes and if everything looks good then you can commit the changes.",
         style="yellow",
     )
-    created_tree = print_beautiful_directory(str(dotfiles_dir))
+    created_tree = add_service.create_tree()
     console.print(created_tree)
 
     while True:
@@ -132,27 +150,31 @@ def add(
             "Press [bold green](y)[/] to commit the changes or [bold red](n)[/] to restore the files: ",
             end="",
         )
-        choice = _get_single_key_safe()
+        try:
+            choice = _get_single_key_safe()
+        except KeyboardInterrupt:
+            add_service.restore_files()
+            return
 
         if choice == "y":
-            log_book.clear_log()
+            add_service.delete_log()
             console.print("Changes committed successfully.", style="green")
             break
 
         if choice == "n":
-            log_book.restore_files()
+            add_service.restore_files()
             console.print("Files restored successfully.", style="yellow")
-            if addfile.package_exists:
+            if add_service.package_exists:
                 # If the package directory is empty after restoring files, we can remove it
-                exit_code = addfile.delete_empty_package()
+                exit_code = add_service.add_files.delete_empty_package()
                 if exit_code == 0:
                     console.print(
-                        f"Package '{addfile.package}' was empty after restoring files and has been removed.",
+                        f"Package '{add_service.add_files.package}' was empty after restoring files and has been removed.",  # noqa: E501
                         style="yellow",
                     )
                 else:
                     console.print(
-                        f"Package '{addfile.package}' was not empty after restoring files.",
+                        f"Package '{add_service.add_files.package}' was not empty after restoring files.",
                         style="yellow",
                     )
             break
