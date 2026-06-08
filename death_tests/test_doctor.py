@@ -12,25 +12,29 @@ from dotman.core.doctor import Doctor, DoctorStatus, SymlinkStatus
 class LabPaths:
     home: Path
     dotfiles_dir: Path
+    profile: str
+    profile_root: Path
 
 
 @pytest.fixture
 def lab(tmp_path: Path) -> LabPaths:
     home = tmp_path / "home"
     dotfiles = tmp_path / "dotfiles"
+    profile = "test_profile"
 
     home.mkdir()
-    dotfiles.mkdir()
+    profile_root = dotfiles / "profiles" / profile
+    profile_root.mkdir(parents=True)
 
-    return LabPaths(home=home, dotfiles_dir=dotfiles)
+    return LabPaths(home=home, dotfiles_dir=dotfiles, profile=profile, profile_root=profile_root)
 
 
 class TestPermissionCheck:
     def test_doctor_check_permission_dotfiles(self, lab: LabPaths):
         home_pth, dotfile_pth = lab.home, lab.dotfiles_dir
-        doctor = Doctor(home_dir=home_pth, dotfile_dir=dotfile_pth, detail=False)
 
-        dotfile_pth.mkdir(exist_ok=True)
+        lab.profile_root.mkdir(exist_ok=True)
+        doctor = Doctor(home_dir=home_pth, dotfile_dir=dotfile_pth, detail=False, profile_name=lab.profile)
         dotfile_pth.chmod(0o555)
         check = doctor.check_permissions_dotfiles()
         assert check.status == DoctorStatus.ERROR
@@ -41,9 +45,9 @@ class TestPermissionCheck:
 
     def test_doctor_check_permission_home(self, lab: LabPaths):
         home_pth, dotfiles_pth = lab.home, lab.dotfiles_dir
-        doctor = Doctor(home_dir=home_pth, dotfile_dir=dotfiles_pth, detail=False)
 
         home_pth.mkdir(exist_ok=True)
+        doctor = Doctor(home_dir=home_pth, dotfile_dir=dotfiles_pth, detail=False, profile_name=lab.profile)
         home_pth.chmod(0o555)
         check = doctor.check_permissions_home()
         assert check.status == DoctorStatus.ERROR
@@ -58,13 +62,19 @@ class TestSymlink:
     def setup(self, lab: LabPaths):
         self.home_dir = lab.home
         self.dotfiles_dir = lab.dotfiles_dir
-        self.doctor = Doctor(home_dir=self.home_dir, dotfile_dir=self.dotfiles_dir, detail=False)
+        self.profile = lab.profile
+        self.profile_root = lab.profile_root
+        self.profile_root.mkdir(parents=True, exist_ok=True)
         self.home_dir.mkdir(exist_ok=True)
-        self.dotfiles_dir.mkdir(exist_ok=True)
+        self.doctor = Doctor(
+            home_dir=self.home_dir, dotfile_dir=self.dotfiles_dir, detail=False, profile_name=self.profile
+        )
 
     def test_missing_taget(self):
-        pkg_dir = self.dotfiles_dir / "testpgk"
+        pkg_dir = self.profile_root / "testpgk"
+        pkg_dir.parent.mkdir(exist_ok=True)
         pkg_dir.mkdir(exist_ok=True)
+
         source_file = pkg_dir / "MISSING_TARGET.txt"
         source_file.touch()
 
@@ -85,8 +95,9 @@ class TestSymlink:
         file = self.home_dir / "pure_file.txt"
         file.touch()
 
-        dotfile_pkg = self.dotfiles_dir / "file"
-        dotfile_pkg.mkdir()
+        dotfile_pkg = self.profile_root / "file"
+        dotfile_pkg.parent.mkdir(exist_ok=True)
+        dotfile_pkg.mkdir(exist_ok=True)
         pkg_file = dotfile_pkg / "pure_file.txt"
         pkg_file.touch()
 
@@ -100,8 +111,9 @@ class TestSymlink:
         wrong_file = self.home_dir / "foreign_file.txt"
         wrong_file.write_text("world")
 
-        pkg_dir = self.dotfiles_dir / "pkg"
-        pkg_dir.mkdir()
+        pkg_dir = self.profile_root / "pkg"
+        pkg_dir.parent.mkdir(exist_ok=True)
+        pkg_dir.mkdir(exist_ok=True)
         pkg_link = pkg_dir / "file.txt"
         pkg_link.symlink_to(wrong_file)
 
@@ -111,8 +123,9 @@ class TestSymlink:
     def test_everthing_is_file(self):
         file = self.home_dir / "file.txt"
 
-        pkg_dir = self.dotfiles_dir / "pkg"
-        pkg_dir.mkdir()
+        pkg_dir = self.profile_root / "pkg"
+        pkg_dir.parent.mkdir(exist_ok=True)
+        pkg_dir.mkdir(exist_ok=True)
         pkg_link = pkg_dir / "file.txt"
         pkg_link.touch()
         file.symlink_to(pkg_link)

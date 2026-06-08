@@ -59,3 +59,10 @@ class FileNameCollidingError(DotmanError):
 
     def __init__(self, file: Path) -> None:
         super().__init__(message=f"Target file `{file}` name is colliding inside home directory")
+
+
+class PackageNotExistsError(DotmanError):
+    """"""
+
+    def __init__(self) -> None:
+        super().__init__(message="Package not exist.")

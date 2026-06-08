@@ -36,7 +36,7 @@ def _add_to_tree(directory: pathlib.Path, tree_node: Tree, temp_log_file: pathli
                 tree_node.add(f"📄 [bright_white]{item.name}[/]")
 
 
-def print_beautiful_directory(temp_log_file: pathlib.Path, target_path: str = "."):
+def print_beautiful_directory(temp_log_file: pathlib.Path, target_path: pathlib.Path):
     """Initializes the root tree node and triggers the clean printer."""
     root_path = pathlib.Path(target_path).resolve()
 

@@ -45,7 +45,8 @@ class DotmanConfig:
 
 class InternalFileSystemObject(Enum):
     PACKAGES = "packages"
-    METADATA = "metadata.json"
+    METADATA = "metadata.yml"
+    PROFILES = "profiles"
 
     @classmethod
     def values(cls) -> set[str]:

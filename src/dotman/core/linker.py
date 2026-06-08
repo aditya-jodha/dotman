@@ -1,6 +1,16 @@
 import shutil
 import time
+from dataclasses import dataclass
 from pathlib import Path
+
+from dotman.core.doctor import Doctor, SymlinkStatus
+
+
+@dataclass
+class LinkPair:
+    source: Path
+    relative_source: Path
+    target: Path
 
 
 class LinkAction:
@@ -8,6 +18,30 @@ class LinkAction:
     LINK = "link"
     BACKUP_AND_LINK = "backup_and_link"
     FIX = "fix"
+
+
+@dataclass
+class UnlinkCheck:
+    source: Path
+    target: Path
+
+    status: SymlinkStatus
+
+
+@dataclass(slots=True)
+class UnlinkResult:
+    source: Path
+    target: Path
+    status: SymlinkStatus
+    removed: bool
+
+    def as_dict(self) -> dict[str, str | float]:
+        return {
+            "source": str(self.source),
+            "target": str(self.target),
+            "status": self.status.value,
+            "removed": self.removed,
+        }
 
 
 class LinkResult:
@@ -95,3 +129,35 @@ class Linker:
 
         except Exception as e:  # noqa: BLE001
             return LinkResult(source, target, action, "error", str(e))
+
+    def link(self, linkpairs: list[LinkPair]) -> list[LinkResult]:
+        """Links a source file to a target path."""
+        return [self.execute(linkpair.source, linkpair.target) for linkpair in linkpairs]
+
+
+class Unlinker:
+    @staticmethod
+    def status(source: Path, target: Path) -> SymlinkStatus:
+        return Doctor.get_symlink_status(source, target)
+
+    def unlink(self, pairs: list[LinkPair]) -> list[UnlinkResult]:
+        results: list[UnlinkResult] = []
+        for pair in pairs:
+            status = self.status(pair.source, pair.target)
+            match status:
+                case SymlinkStatus.OK:
+                    pair.target.unlink(missing_ok=True)
+                    results.append(
+                        UnlinkResult(source=pair.source, target=pair.target, status=SymlinkStatus.OK, removed=True)
+                    )
+                case SymlinkStatus.BROKEN_SYMLINK:
+                    pair.target.unlink(missing_ok=True)
+                    results.append(UnlinkResult(source=pair.source, target=pair.target, status=status, removed=True))
+
+                case _:
+                    # MISSING_TARGET shouldn't be removed.
+                    # source -> exists
+                    # target -> doesn't exist
+                    # There is nothing to unlink.
+                    results.append(UnlinkResult(source=pair.source, target=pair.target, status=status, removed=False))
+        return results

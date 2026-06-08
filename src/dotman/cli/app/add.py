@@ -5,7 +5,6 @@ from pathlib import Path
 
 from rich.console import Console
 
-from dotman.cli.common_func import check_file_exists
 from dotman.core.add import SymlinkStatus
 from dotman.core.service.add_service import AddErrors, AddService
 
@@ -47,33 +46,27 @@ def _get_single_key_safe() -> str:
 
 
 def add(
-    home_dir: Path,
-    dotfiles_dir: Path,
     file: Path,
     package_name: str | None,
 ):
-    # Resolve the file path
-    resolved_file = file.expanduser()
-    if not resolved_file.is_absolute():
-        resolved_file = Path.cwd() / resolved_file
-    resolved_home = home_dir.resolve(strict=False)
-
-    if not check_file_exists(resolved_home, dotfiles_dir):
-        # This checks the home directory and dotfiles directory correctly
-        return
-
     # Core dose't validate CLI argument problems.
     if package_name is None:
         console.print("Package name is required to add a file.", style="red")
         return
+    # Resolve the file path
+    resolved_file = file.expanduser()
+    if not resolved_file.is_absolute():
+        resolved_file = Path.cwd() / resolved_file
 
     add_service = AddService(
         file=resolved_file,
         package=package_name,
-        home_dir=home_dir,
-        dotfiles_dir=dotfiles_dir,
     )
     add_service.load()
+
+    if not add_service.is_dotfile_home_exits:
+        # This checks the home directory and dotfiles directory correctly
+        return
 
     match add_service.service_validate():
         case AddErrors.FileNotExists:
@@ -83,10 +76,10 @@ def add(
             console.print(f"File '{file}' is a symlink.", style="red")
             return
         case AddErrors.NotASubPath:
-            console.print(f"File '{file}' is not a subpath of '{home_dir}'.", style="red")
+            console.print(f"File '{file}' is not a subpath of '{add_service.home_dir}'.", style="red")
             return
         case AddErrors.InvalidPackage:
-            console.print(f"Package '{package_name}' is invalid.", style="red")
+            console.print(f"Package '{add_service.package}' is invalid.", style="red")
             return
         case AddErrors.TargetIsHome:
             console.print(f"Target file `{add_service.file}` is home directory path.", style="Red")

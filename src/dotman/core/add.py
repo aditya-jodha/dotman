@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 
 from dotman.core.config import EXITCODE, InternalFileSystemObject, StrPath, load_config, make_temp_log_file
-from dotman.errors.custom_errors_of_add import (
+from dotman.errors.custom_errors import (
     FileDoesNotExistError,
     FileNameCollidingError,
     InvalidPackageNameError,
@@ -79,19 +79,19 @@ class AddFiles:
 
     def __init__(
         self,
+        profile_name: str,
         home_dir: Path,
         dotfiles_dir: Path,
         file: Path,
         package: str,
         logbook: LogBook,
     ):
+        self.profile_name = profile_name
         self.home_dir = home_dir.resolve()
         self.dotfiles_dir = dotfiles_dir.resolve()
         self.file = file.resolve(strict=False)
         self.original_file = file
         self.package = package  # Assumed that @src/dotman/core/service/add_service.py sanitizes the package name
-        self.log_book = logbook
-
         self.log_book = logbook
 
     @property
@@ -102,7 +102,11 @@ class AddFiles:
     @property
     def package_exists(self) -> bool:
         """Checks if the package directory exists in the dotfiles directory."""
-        return (self.dotfiles_dir / self.package).exists()
+        return (self.profile_root / self.package).exists()
+
+    @property
+    def profile_root(self):
+        return self.dotfiles_dir / "profiles" / self.profile_name
 
     def is_file_in_package(self):
         """Check name collision."""
@@ -133,14 +137,14 @@ class AddFiles:
             raise InvalidPackageNameError(self.package.__str__(), True)
 
         rel_path = self.file.relative_to(self.home_dir)
-        self.destination = self.dotfiles_dir / self.package / rel_path
+        self.destination = self.profile_root / self.package / rel_path
 
         if self.is_file_in_package():
             raise FileNameCollidingError(self.file)
 
     def create_package(self):
         """Creates the directory inside dotfiles"""
-        pkg_to_create = self.dotfiles_dir / self.package
+        pkg_to_create = self.profile_root / self.package
         pkg_to_create.mkdir(parents=True, exist_ok=False)
 
     def delete_empty_package(self) -> EXITCODE:
@@ -179,11 +183,11 @@ class AddFiles:
 
     def file_exists_in_package(self) -> bool:
         """Checks if the file exists in the package directory."""
-        return (self.dotfiles_dir / self.package / self.file.relative_to(self.home_dir)).exists()
+        return (self.profile_root / self.package / self.file.relative_to(self.home_dir)).exists()
 
     def has_files_in_package(self, pkg: str | None = None) -> bool:
         """Checks if the log file has any entries for files in the package."""
-        path = Path(self.dotfiles_dir / pkg) if pkg else Path(self.dotfiles_dir / self.package)
+        path = Path(self.profile_root / pkg) if pkg else Path(self.profile_root / self.package)
 
         # Returns True if at least one item inside is a regular file
         return any(item.is_file() for item in path.iterdir())

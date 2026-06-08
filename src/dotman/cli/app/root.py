@@ -13,8 +13,7 @@ app = typer.Typer(help="A CLI tool to manage your dotfiles.", no_args_is_help=Tr
 def init():
     from dotman.cli.app.init import init  # noqa: PLC0415
 
-    cgf = load_config()
-    init(home_dir=cgf.home_dir, dotfiles_dir=cgf.dotfiles_dir)
+    init()
 
 
 @app.command(help="Sync dotfiles package links to the home directory.")
@@ -26,16 +25,14 @@ def sync(
 ):
     from dotman.cli.app.sync import sync  # noqa: PLC0415
 
-    cgf = load_config()
-    sync(dotfiles_dir=cgf.dotfiles_dir, home_dir=cgf.home_dir, package_name=package_name, dry_run=dry_run)
+    sync(package_name=package_name, dry_run=dry_run)
 
 
 @app.command(help="Give a full diagnostic report.")
 def doctor(detail: bool = typer.Option(False, "-a", "--all", help="Show detailed information.")):
     from dotman.cli.app.doctor import doctor  # noqa: PLC0415
 
-    cgf = load_config()
-    doctor(home_dir=cgf.home_dir, dotfiles_dir=cgf.dotfiles_dir, detail=detail)
+    doctor(detail=detail)
 
 
 @app.command(help="Add a file to a package.")
@@ -45,8 +42,7 @@ def add(
 ):
     from dotman.cli.app.add import add  # noqa: PLC0415
 
-    cgf = load_config()
-    add(dotfiles_dir=cgf.dotfiles_dir, home_dir=cgf.home_dir, file=file, package_name=package_name)
+    add(file=file, package_name=package_name)
 
 
 # ================================================================
@@ -66,11 +62,6 @@ def sandbox():
     items = list(home_dir.rglob("*"))
     if items:
         print("home directory is not empty")
-        return
-
-    items = list(dotfiles_dir.rglob("*"))
-    if items:
-        print("dotfiles directory is not empty")
         return
 
     def make_home():

@@ -29,12 +29,14 @@ class Initializer:
         if not self.dotfiles_dir.exists():
             self.dotfiles_dir.mkdir()
 
-    def setup(self):
-        """Sets up the dotfiles directory by creating some default files."""
-        # MetaData file
+    def create_meta(self, current_profile: str):
+        """Creates the metadata file."""
         meta_file = self.dotfiles_dir / InternalFileSystemObject.METADATA.value
-        meta_file.touch()
+        meta_file.write_text(f"current_profile: {current_profile}\n")
+        return meta_file
 
-        # Packages directory
-        packages_dir = self.dotfiles_dir / InternalFileSystemObject.PACKAGES.value
-        packages_dir.mkdir()
+    def create_profile(self, name: str):
+        """Writes a profile file."""
+        profile_dir = self.dotfiles_dir / InternalFileSystemObject.PROFILES.value / name
+        profile_dir.mkdir(parents=True)
+        return profile_dir

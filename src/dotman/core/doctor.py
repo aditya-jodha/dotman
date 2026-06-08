@@ -31,8 +31,8 @@ class DoctorStatusName(Enum):
 
 class SymlinkStatus(Enum):
     OK = "ok"
-    MISSING_TARGET = "missing_target"
     BROKEN_SYMLINK = "broken_symlink"
+    MISSING_TARGET = "missing_target"
     NOT_A_SYMLINK = "not_a_symlink"
     WRONG_SOURCE = "wrong_source"
 
@@ -52,15 +52,16 @@ class DoctorCheck:
 
 
 class Doctor:
-    def __init__(self, home_dir: Path, dotfile_dir: Path, detail: bool) -> None:
+    def __init__(self, profile_name: str, home_dir: Path, dotfile_dir: Path, detail: bool) -> None:
         self.home_dir = home_dir
+        self.profile_name = profile_name
         self.dotfiles_dir = dotfile_dir
         self.detail = detail
 
         self.packages = []
         self.valid_dir = self.is_dotfiles_dir_valid()
         if self.valid_dir.status == DoctorStatus.OK:
-            self.packages = [p for p in self.dotfiles_dir.iterdir() if p.is_dir()]
+            self.packages = [p for p in (self.dotfiles_dir / "profiles" / self.profile_name).iterdir() if p.is_dir()]
 
     def is_dotfiles_dir_valid(self) -> DoctorCheck:
         if not self.dotfiles_dir.exists():

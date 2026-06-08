@@ -1,11 +1,12 @@
 from enum import Enum
 from pathlib import Path
 
-from dotman.cli.common_func import sanitize_package_name
+from dotman.cli.common_func import check_file_exists, sanitize_package_name
 from dotman.cli.tree_builder import print_beautiful_directory
 from dotman.core.add import AddFiles, LogBook, SymlinkCheck
-from dotman.core.config import SUCCESSCODE
-from dotman.errors.custom_errors_of_add import (
+from dotman.core.config import SUCCESSCODE, InternalFileSystemObject, load_config
+from dotman.core.get_internal_data import InternalData, InternalDataArguments
+from dotman.errors.custom_errors import (
     FileDoesNotExistError,
     FileNameCollidingError,
     InvalidPackageNameError,
@@ -14,6 +15,7 @@ from dotman.errors.custom_errors_of_add import (
     TargetFileIsDotfilesDirError,
     TargetFileIsHomeError,
 )
+from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
 
 
 class AddErrors(Enum):
@@ -27,19 +29,37 @@ class AddErrors(Enum):
 
 
 class AddService:
-    def __init__(self, file: Path, package: str, home_dir: Path, dotfiles_dir: Path) -> None:
+    def __init__(
+        self,
+        file: Path,
+        package: str,
+        home_dir: Path | None = None,
+        dotfiles_dir: Path | None = None,
+        profile: str | None = None,
+    ) -> None:
         self.file = file
         self.package: str = sanitize_package_name(package)
-        self.home_dir = home_dir
-        self.dotfiles_dir = dotfiles_dir
+
+        config = load_config()
+        self.home_dir = home_dir or config.home_dir
+        self.dotfiles_dir = dotfiles_dir or config.dotfiles_dir
+        self.profile = profile
 
         self.logbook = LogBook()
+        self.internal_data: InternalData = InternalData.load()
 
     def load(self):
+        current_profile = self.internal_data.current_profile
+
+        if current_profile is None and self.profile is None:
+            raise ProfileMetaDataFileCorruptedError(InternalDataArguments.CURRENT_PROFILE)
+
+        chosen_profile = self.profile if self.profile is not None else current_profile
 
         self.add_files = AddFiles(
             file=self.file,
             package=self.package,
+            profile_name=chosen_profile,  # type: ignore # Already checked for None
             home_dir=self.home_dir,
             dotfiles_dir=self.dotfiles_dir,
             logbook=self.logbook,
@@ -93,4 +113,15 @@ class AddService:
         return self.logbook.restore_files()
 
     def create_tree(self):
-        return print_beautiful_directory(self.logbook.log_file, str(self.dotfiles_dir))
+        profile = self.profile or self.internal_data.current_profile
+        if profile is None:
+            raise ProfileMetaDataFileCorruptedError(InternalDataArguments.CURRENT_PROFILE)
+
+        return print_beautiful_directory(
+            self.logbook.log_file,
+            self.dotfiles_dir / InternalFileSystemObject.PROFILES.value / profile,
+        )
+
+    @property
+    def is_dotfile_home_exits(self):
+        return check_file_exists(self.home_dir, self.dotfiles_dir)

@@ -38,7 +38,8 @@
     "files.associations": {
         "*.csv": "csv"
     },
-    "python.analysis.extraPaths": ["./My_Modules/Safe_Maths/src"],
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.analysis.extraPaths": ["${workspaceFolder}/src"],
     "files.watcherExclude": {
         "**/.git/objects/**": true,
         "**/.git/subtree-cache/**": true,
@@ -62,5 +63,7 @@
             "packageManager": "ms-python.python:pip"
         }
     ],
-    "python.languageServer": "Pylance"
+    "python.languageServer": "Pylance",
+    "editor.hover.enabled": "on",
+    "editor.inlineSuggest.experimental.showOnSuggestConflict": "always"
 }
