@@ -27,6 +27,8 @@ dotman = "dotman.__cli__:app"
 [tool.coverage.run]
 omit = [
     "src/dotman/cli/*",
+    "src/dotman/errors/*",
+    "src/dotman/core/service/*",
 ]
 
 [tool.typer]
