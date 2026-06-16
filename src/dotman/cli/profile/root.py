@@ -39,9 +39,15 @@ def use(name: str | None = typer.Argument(None, help="Name of the profile to use
         return
 
     else:
-        console.print(f"[bold green]Switched to profile: {result.new_profile}[/bold green]\n")
+        console.print(
+            f"[bold green]Switched to profile: {result.new_profile}[/bold green]\n"
+        )
 
-        table = Table(title=f"Profile Action Log ({name})", show_header=True, header_style="bold magenta")
+        table = Table(
+            title=f"Profile Action Log ({name})",
+            show_header=True,
+            header_style="bold magenta",
+        )
 
         table.add_column("Operation", style="bold")
         table.add_column("Source Path", style="blue")
@@ -64,7 +70,13 @@ def use(name: str | None = typer.Argument(None, help="Name of the profile to use
 
             details = "Removed Symlink" if unlink.removed else "Not Removed"
 
-            table.add_row("Unlink", str(unlink.source), str(unlink.target), status_display, details)
+            table.add_row(
+                "Unlink",
+                str(unlink.source),
+                str(unlink.target),
+                status_display,
+                details,
+            )
 
         # 3. Process Link Results
         for link in result.link_results:
@@ -79,13 +91,17 @@ def use(name: str | None = typer.Argument(None, help="Name of the profile to use
 
             details = link.message or (link.action.capitalize() if link.action else "")
 
-            table.add_row("Link", str(link.source), str(link.target), status_display, details)
+            table.add_row(
+                "Link", str(link.source), str(link.target), status_display, details
+            )
 
         console.print(table)
 
 
 @profile.command(help="Create a new profile")
-def create(name: str | None = typer.Argument(None, help="Name of the profile to create")):
+def create(
+    name: str | None = typer.Argument(None, help="Name of the profile to create"),
+):
     service = ProfileSwitcher()
     if name is None:
         console.print("Profile name is required")
@@ -99,7 +115,9 @@ def create(name: str | None = typer.Argument(None, help="Name of the profile to 
 
 
 @profile.command(help="Delete a profile")
-def delete(name: str | None = typer.Argument(None, help="Name of the profile to delete")):
+def delete(
+    name: str | None = typer.Argument(None, help="Name of the profile to delete"),
+):
     service = ProfileSwitcher()
     if name is None:
         console.print("Profile name is required")

@@ -20,7 +20,9 @@ class DoctorService:
     def load(self):
         current_profile = self.internal_data.current_profile
         if current_profile is None:
-            raise ProfileMetaDataFileCorruptedError(InternalDataArguments.CURRENT_PROFILE)
+            raise ProfileMetaDataFileCorruptedError(
+                InternalDataArguments.CURRENT_PROFILE
+            )
 
         self.doctor = Doctor(
             profile_name=current_profile,

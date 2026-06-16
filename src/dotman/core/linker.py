@@ -45,7 +45,9 @@ class UnlinkResult:
 
 
 class LinkResult:
-    def __init__(self, source: Path, target: Path, action: str, status: str, message: str = ""):
+    def __init__(
+        self, source: Path, target: Path, action: str, status: str, message: str = ""
+    ):
         self.source = source
         self.target = target
         self.action = action
@@ -132,7 +134,9 @@ class Linker:
 
     def link(self, linkpairs: list[LinkPair]) -> list[LinkResult]:
         """Links a source file to a target path."""
-        return [self.execute(linkpair.source, linkpair.target) for linkpair in linkpairs]
+        return [
+            self.execute(linkpair.source, linkpair.target) for linkpair in linkpairs
+        ]
 
 
 class Unlinker:
@@ -148,16 +152,35 @@ class Unlinker:
                 case SymlinkStatus.OK:
                     pair.target.unlink(missing_ok=True)
                     results.append(
-                        UnlinkResult(source=pair.source, target=pair.target, status=SymlinkStatus.OK, removed=True)
+                        UnlinkResult(
+                            source=pair.source,
+                            target=pair.target,
+                            status=SymlinkStatus.OK,
+                            removed=True,
+                        )
                     )
                 case SymlinkStatus.BROKEN_SYMLINK:
                     pair.target.unlink(missing_ok=True)
-                    results.append(UnlinkResult(source=pair.source, target=pair.target, status=status, removed=True))
+                    results.append(
+                        UnlinkResult(
+                            source=pair.source,
+                            target=pair.target,
+                            status=status,
+                            removed=True,
+                        )
+                    )
 
                 case _:
                     # MISSING_TARGET shouldn't be removed.
                     # source -> exists
                     # target -> doesn't exist
                     # There is nothing to unlink.
-                    results.append(UnlinkResult(source=pair.source, target=pair.target, status=status, removed=False))
+                    results.append(
+                        UnlinkResult(
+                            source=pair.source,
+                            target=pair.target,
+                            status=status,
+                            removed=False,
+                        )
+                    )
         return results

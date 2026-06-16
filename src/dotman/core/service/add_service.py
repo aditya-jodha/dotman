@@ -11,7 +11,7 @@ from dotman.errors.custom_errors import (
     FileNameCollidingError,
     InvalidPackageNameError,
     IsNotASubPathError,
-    SymFileCameInAddFilesLogicError,
+    SymlinkNotSupportedError,
     TargetFileIsDotfilesDirError,
     TargetFileIsHomeError,
 )
@@ -20,7 +20,7 @@ from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
 
 class AddErrors(Enum):
     FileNotExists = FileDoesNotExistError
-    FileIsSymLink = SymFileCameInAddFilesLogicError
+    FileIsSymLink = SymlinkNotSupportedError
     NotASubPath = IsNotASubPathError
     InvalidPackage = InvalidPackageNameError
     TargetIsHome = TargetFileIsHomeError
@@ -52,7 +52,9 @@ class AddService:
         current_profile = self.internal_data.current_profile
 
         if current_profile is None and self.profile is None:
-            raise ProfileMetaDataFileCorruptedError(InternalDataArguments.CURRENT_PROFILE)
+            raise ProfileMetaDataFileCorruptedError(
+                InternalDataArguments.CURRENT_PROFILE
+            )
 
         chosen_profile = self.profile if self.profile is not None else current_profile
 
@@ -80,7 +82,7 @@ class AddService:
             self.add_files.validate()
         except FileDoesNotExistError:
             return AddErrors.FileNotExists
-        except SymFileCameInAddFilesLogicError:
+        except SymlinkNotSupportedError:
             return AddErrors.FileIsSymLink
         except IsNotASubPathError:
             return AddErrors.NotASubPath
@@ -115,7 +117,9 @@ class AddService:
     def create_tree(self):
         profile = self.profile or self.internal_data.current_profile
         if profile is None:
-            raise ProfileMetaDataFileCorruptedError(InternalDataArguments.CURRENT_PROFILE)
+            raise ProfileMetaDataFileCorruptedError(
+                InternalDataArguments.CURRENT_PROFILE
+            )
 
         return print_beautiful_directory(
             self.logbook.log_file,

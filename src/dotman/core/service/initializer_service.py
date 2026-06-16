@@ -6,7 +6,9 @@ from dotman.errors.initializer_errors import DotmanDotfilesBackupDirExistsError
 
 
 class InitializerService:
-    def __init__(self, home_dir: Path | None = None, dotfiles_dir: Path | None = None) -> None:
+    def __init__(
+        self, home_dir: Path | None = None, dotfiles_dir: Path | None = None
+    ) -> None:
         cfg = load_config()
         self.dotfiles_dir = dotfiles_dir or cfg.dotfiles_dir
         self.home_dir = home_dir or cfg.home_dir

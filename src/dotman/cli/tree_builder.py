@@ -6,7 +6,9 @@ from rich.tree import Tree
 from dotman.core.config import InternalFileSystemObject
 
 
-def _add_to_tree(directory: pathlib.Path, tree_node: Tree, temp_log_file: pathlib.Path) -> None:
+def _add_to_tree(
+    directory: pathlib.Path, tree_node: Tree, temp_log_file: pathlib.Path
+) -> None:
     """Safely loops through directory contents and adds them to the Rich tree."""
     try:
         # Sort so folders stay on top, followed alphabetically by files
@@ -16,7 +18,10 @@ def _add_to_tree(directory: pathlib.Path, tree_node: Tree, temp_log_file: pathli
         return
 
     for item in items:
-        if item.name in InternalFileSystemObject.values() or item.name == temp_log_file.name:
+        if (
+            item.name in InternalFileSystemObject.values()
+            or item.name == temp_log_file.name
+        ):
             continue
 
         if item.is_dir():

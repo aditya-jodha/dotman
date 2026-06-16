@@ -17,7 +17,9 @@ class DotmanDotfilesBackupDirExistsError(DotmanInitializerError):
     """Raised when the dotfiles backup directory already exists."""
 
     def __init__(self, dotfiles_dir: Path) -> None:
-        super().__init__(message=f"Dotfiles backup directory already exists at {dotfiles_dir}")
+        super().__init__(
+            message=f"Dotfiles backup directory already exists at {dotfiles_dir}"
+        )
         self.dotfiles_dir = dotfiles_dir
 
 

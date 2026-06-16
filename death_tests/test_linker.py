@@ -90,7 +90,9 @@ def test_dry_run(tmp_dirs: tuple[Path, Path]) -> None:
     assert not target.exists()
 
 
-def test_error_handling(tmp_dirs: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch) -> None:
+def test_error_handling(
+    tmp_dirs: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
     home, backup = tmp_dirs
     source: Path = home / "source.txt"
     source.write_text("hello")

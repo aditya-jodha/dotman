@@ -12,7 +12,10 @@ def check_file_exists(home_location: Path, dotfiles_location: Path) -> bool:
 
     if home_location.exists():
         if not home_location.is_dir():
-            console.print(f"Home directory '{home_location}' exists but is not a directory.", style="red")
+            console.print(
+                f"Home directory '{home_location}' exists but is not a directory.",
+                style="red",
+            )
             return False
     else:
         console.print(f"Home directory '{home_location}' does not exist.", style="red")
@@ -20,10 +23,15 @@ def check_file_exists(home_location: Path, dotfiles_location: Path) -> bool:
 
     if dotfiles_location.exists():
         if not dotfiles_location.is_dir():
-            console.print(f"Dotfiles directory '{dotfiles_location}' exists but is not a directory.", style="red")
+            console.print(
+                f"Dotfiles directory '{dotfiles_location}' exists but is not a directory.",
+                style="red",
+            )
             return False
     else:
-        console.print(f"Dotfiles directory '{dotfiles_location}' does not exist.", style="red")
+        console.print(
+            f"Dotfiles directory '{dotfiles_location}' does not exist.", style="red"
+        )
         return False
 
     return True

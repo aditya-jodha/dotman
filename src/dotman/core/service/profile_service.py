@@ -23,13 +23,17 @@ class ProfileSwitchResult:
 
 
 class ProfileSwitcher:
-    def __init__(self, home_dir: Path | None = None, dotfiles_dir: Path | None = None) -> None:
+    def __init__(
+        self, home_dir: Path | None = None, dotfiles_dir: Path | None = None
+    ) -> None:
         cfg = load_config()
         self.home_dir = home_dir or cfg.home_dir
         self.dotfiles_dir = dotfiles_dir or cfg.dotfiles_dir
 
         self.profile_manager = ProfileManager(self.dotfiles_dir)
-        self.profile_scanner = ProfileScanner(profile_manager=self.profile_manager, home_dir=self.home_dir)
+        self.profile_scanner = ProfileScanner(
+            profile_manager=self.profile_manager, home_dir=self.home_dir
+        )
         self.unlinker = Unlinker()
         self.linker = Linker(self.home_dir, self.home_dir / "dotman_backup")
 
@@ -39,7 +43,9 @@ class ProfileSwitcher:
 
         current_profile = ProfileState.get_current_profile()
         if current_profile is None:
-            raise ProfileMetaDataFileCorruptedError(InternalDataArguments.CURRENT_PROFILE)
+            raise ProfileMetaDataFileCorruptedError(
+                InternalDataArguments.CURRENT_PROFILE
+            )
 
         if current_profile == name:
             return ProfileSwitchResult(

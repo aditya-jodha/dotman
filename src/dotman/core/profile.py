@@ -3,7 +3,11 @@ from pathlib import Path
 from dotman.core.config import InternalFileSystemObject
 from dotman.core.get_internal_data import InternalData
 from dotman.core.linker import LinkPair
-from dotman.errors.profile_errors import DirNotEmptyError, ProfileAlreadyExistsError, ProfileNotFoundError
+from dotman.errors.profile_errors import (
+    DirNotEmptyError,
+    ProfileAlreadyExistsError,
+    ProfileNotFoundError,
+)
 
 
 class ProfileState:
@@ -22,7 +26,9 @@ class ProfileState:
 class ProfileManager:
     def __init__(self, dotfiles_dir: Path):
         self.dotfiles_dir: Path = dotfiles_dir
-        self.profiles_dir: Path = self.dotfiles_dir / InternalFileSystemObject.PROFILES.value
+        self.profiles_dir: Path = (
+            self.dotfiles_dir / InternalFileSystemObject.PROFILES.value
+        )
 
     def create_profile(self, name: str | None = None):
         if name is None:
@@ -40,7 +46,9 @@ class ProfileManager:
         (self.profiles_dir / name).rmdir()
 
     def list_profiles(self) -> list[str]:
-        return [profile.name for profile in self.profiles_dir.iterdir() if profile.is_dir()]
+        return [
+            profile.name for profile in self.profiles_dir.iterdir() if profile.is_dir()
+        ]
 
     def profile_exists(self, name: str) -> bool:
         return self.profile_path(name).exists()

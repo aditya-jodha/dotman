@@ -8,7 +8,11 @@ import pytest
 from dotman.core.config import InternalFileSystemObject
 from dotman.core.get_internal_data import InternalData
 from dotman.core.profile import ProfileManager, ProfileScanner, ProfileState
-from dotman.errors.profile_errors import ProfileAlreadyExistsError, ProfileNotFoundError
+from dotman.errors.profile_errors import (
+    DirNotEmptyError,
+    ProfileAlreadyExistsError,
+    ProfileNotFoundError,
+)
 
 
 @dataclass
@@ -34,7 +38,13 @@ def lab(tmp_path: Path) -> LabPaths:
     home.mkdir()
     dotfiles.mkdir()
     meta_data.write_text(f"current_profile: {profile}\n")
-    return LabPaths(home=home, dotfiles_dir=dotfiles, profile=profile, profile_root=profile_root, meta_path=meta_data)
+    return LabPaths(
+        home=home,
+        dotfiles_dir=dotfiles,
+        profile=profile,
+        profile_root=profile_root,
+        meta_path=meta_data,
+    )
 
 
 class TestProfileState:
@@ -96,7 +106,9 @@ class TestProfileManager:
 
         manager.create_profile("personal")
 
-        assert (lab.dotfiles_dir / InternalFileSystemObject.PROFILES.value / "personal").exists()
+        assert (
+            lab.dotfiles_dir / InternalFileSystemObject.PROFILES.value / "personal"
+        ).exists()
 
     def test_create_profile_duplicate(self, lab: LabPaths):
         manager = ProfileManager(lab.dotfiles_dir)
@@ -126,6 +138,16 @@ class TestProfileManager:
 
         with pytest.raises(ProfileNotFoundError):
             manager.delete_profile("ghost")
+
+    def test_delete_profile_not_empty(self, lab: LabPaths):
+        manager = ProfileManager(lab.dotfiles_dir)
+        profile = "ghost"
+        manager.create_profile(profile)
+        pth = manager.profile_path(profile)
+
+        (pth / "pkg").mkdir(parents=True, exist_ok=False)
+        with pytest.raises(DirNotEmptyError):
+            manager.delete_profile(profile)
 
     def test_list_profiles(self, lab: LabPaths):
         manager = ProfileManager(lab.dotfiles_dir)
@@ -176,7 +198,9 @@ class TestProfileScanner:
         manager = ProfileManager(lab.dotfiles_dir)
         manager.create_profile("personal")
 
-        file = manager.profile_path("personal") / "nvim" / ".config" / "nvim" / "init.lua"
+        file = (
+            manager.profile_path("personal") / "nvim" / ".config" / "nvim" / "init.lua"
+        )
 
         file.parent.mkdir(parents=True)
         file.write_text("hello")

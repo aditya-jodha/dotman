@@ -1,6 +1,6 @@
 [project]
 name = "dotman"
-version = "0.6.0"
+version = "0.6.2"
 authors = [
   { name="Aditya Pratap Singh Rathore"},
 ]
@@ -15,6 +15,11 @@ dependencies = [
 
 [project.scripts]
 dotman = "dotman.__cli__:app"
+
+[tool.coverage.run]
+omit = [
+    "src/dotman/cli/*",
+]
 
 [tool.typer]
 main = "dotman.__cli__:app"

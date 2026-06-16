@@ -21,7 +21,9 @@ def sync(
     package_name: str | None = typer.Option(
         None, "--package", help="Sync only this package. Syncs all packages by default."
     ),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be linked without changing files."),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Show what would be linked without changing files."
+    ),
 ):
     from dotman.cli.app.sync import sync  # noqa: PLC0415
 
@@ -29,7 +31,11 @@ def sync(
 
 
 @app.command(help="Give a full diagnostic report.")
-def doctor(detail: bool = typer.Option(False, "-a", "--all", help="Show detailed information.")):
+def doctor(
+    detail: bool = typer.Option(
+        False, "-a", "--all", help="Show detailed information."
+    ),
+):
     from dotman.cli.app.doctor import doctor  # noqa: PLC0415
 
     doctor(detail=detail)
@@ -38,7 +44,9 @@ def doctor(detail: bool = typer.Option(False, "-a", "--all", help="Show detailed
 @app.command(help="Add a file to a package.")
 def add(
     file: Path,
-    package_name: str | None = typer.Option(None, "--package", help="The package name to which the file belongs."),
+    package_name: str | None = typer.Option(
+        None, "--package", help="The package name to which the file belongs."
+    ),
 ):
     from dotman.cli.app.add import add  # noqa: PLC0415
 

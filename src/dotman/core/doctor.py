@@ -52,7 +52,9 @@ class DoctorCheck:
 
 
 class Doctor:
-    def __init__(self, profile_name: str, home_dir: Path, dotfile_dir: Path, detail: bool) -> None:
+    def __init__(
+        self, profile_name: str, home_dir: Path, dotfile_dir: Path, detail: bool
+    ) -> None:
         self.home_dir = home_dir
         self.profile_name = profile_name
         self.dotfiles_dir = dotfile_dir
@@ -61,7 +63,11 @@ class Doctor:
         self.packages = []
         self.valid_dir = self.is_dotfiles_dir_valid()
         if self.valid_dir.status == DoctorStatus.OK:
-            self.packages = [p for p in (self.dotfiles_dir / "profiles" / self.profile_name).iterdir() if p.is_dir()]
+            self.packages = [
+                p
+                for p in (self.dotfiles_dir / "profiles" / self.profile_name).iterdir()
+                if p.is_dir()
+            ]
 
     def is_dotfiles_dir_valid(self) -> DoctorCheck:
         if not self.dotfiles_dir.exists():
@@ -121,15 +127,17 @@ class Doctor:
                 )
             )
 
-        checks.extend([
-            DoctorCheck(
-                name=f"{DoctorStatusName.PACKAGE.value}: {pkg.name}",
-                status=DoctorStatus.WARN,
-                message=f"Package '{pkg.name}' is empty.",
-            )
-            for pkg in self.packages
-            if not self.has_files(pkg) and not self.is_internal_package(pkg)
-        ])
+        checks.extend(
+            [
+                DoctorCheck(
+                    name=f"{DoctorStatusName.PACKAGE.value}: {pkg.name}",
+                    status=DoctorStatus.WARN,
+                    message=f"Package '{pkg.name}' is empty.",
+                )
+                for pkg in self.packages
+                if not self.has_files(pkg) and not self.is_internal_package(pkg)
+            ]
+        )
 
         return checks
 
@@ -182,7 +190,9 @@ class Doctor:
                                 DoctorCheck(
                                     name=f"{pkg.name}:{source.relative_to(pkg)}",
                                     status=DoctorStatus.WARN,
-                                    message=(f"Expected '{source}', but '{target}' points to '{target.resolve()}'."),
+                                    message=(
+                                        f"Expected '{source}', but '{target}' points to '{target.resolve()}'."
+                                    ),
                                 )
                             )
                         case SymlinkStatus.OK:
@@ -210,16 +220,24 @@ class Doctor:
     def check_permissions_dotfiles(self) -> DoctorCheck:
         if not os.access(self.dotfiles_dir, os.W_OK):
             return DoctorCheck(
-                name="Permissions", status=DoctorStatus.ERROR, message=f"No write permission for {self.dotfiles_dir}"
+                name="Permissions",
+                status=DoctorStatus.ERROR,
+                message=f"No write permission for {self.dotfiles_dir}",
             )
-        return DoctorCheck(name="Permissions", status=DoctorStatus.OK, message="Permissions look fine.")
+        return DoctorCheck(
+            name="Permissions", status=DoctorStatus.OK, message="Permissions look fine."
+        )
 
     def check_permissions_home(self) -> DoctorCheck:
         if not os.access(self.home_dir, os.W_OK):
             return DoctorCheck(
-                name="Permissions", status=DoctorStatus.ERROR, message=f"No write permission for {self.home_dir}"
+                name="Permissions",
+                status=DoctorStatus.ERROR,
+                message=f"No write permission for {self.home_dir}",
             )
-        return DoctorCheck(name="Permissions", status=DoctorStatus.OK, message="Permissions look fine.")
+        return DoctorCheck(
+            name="Permissions", status=DoctorStatus.OK, message="Permissions look fine."
+        )
 
     def summary(self, doctorchecks: list[DoctorCheck]) -> SummeryReport:
         report = SummeryReport(ok=0, warn=0, error=0)

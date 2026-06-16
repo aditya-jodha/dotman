@@ -76,18 +76,28 @@ def add(
             console.print(f"File '{file}' is a symlink.", style="red")
             return
         case AddErrors.NotASubPath:
-            console.print(f"File '{file}' is not a subpath of '{add_service.home_dir}'.", style="red")
+            console.print(
+                f"File '{file}' is not a subpath of '{add_service.home_dir}'.",
+                style="red",
+            )
             return
         case AddErrors.InvalidPackage:
             console.print(f"Package '{add_service.package}' is invalid.", style="red")
             return
         case AddErrors.TargetIsHome:
-            console.print(f"Target file `{add_service.file}` is home directory path.", style="Red")
+            console.print(
+                f"Target file `{add_service.file}` is home directory path.", style="Red"
+            )
             return
         case AddErrors.TargetIsDotfilesDir:
-            console.print(f"Target file `{add_service.file}` is dotfiles directory path", style="Red")
+            console.print(
+                f"Target file `{add_service.file}` is dotfiles directory path",
+                style="Red",
+            )
         case AddErrors.FileNameCollidingError:
-            console.print(f"File name `{file.name}` exists in dotfiles directory", style="Red")
+            console.print(
+                f"File name `{file.name}` exists in dotfiles directory", style="Red"
+            )
         case None:
             # None means everything is fine.
             pass
@@ -107,10 +117,13 @@ def add(
             return
 
     if add_service.create_reuse_package():
-        console.print(f"Package exist transfereing {add_service.add_files.file}", style="dim green")
+        console.print(
+            f"Package exist transfereing {add_service.add_files.file}",
+            style="dim green",
+        )
     else:
         console.print("Package not found created new package", style="dim green")
-        # As move_dir_to_dotfiles & move_file_to_dotfiles can raise FileNotFoundError but as
+        # As move_file_to_dotfiles can raise FileNotFoundError but as
         # we check above so no need to put try/except block here
 
     if add_service.service_add_file():

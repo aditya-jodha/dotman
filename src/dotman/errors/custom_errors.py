@@ -3,12 +3,18 @@ from pathlib import Path
 from .dotman_error import DotmanError
 
 
-class SymFileCameInAddFilesLogicError(DotmanError):
-    """Raised when a symlink file comes in AddFiles logic. This should not happen.
-    This is a logic error. Not a user error."""
+class SymlinkNotSupportedError(DotmanError):
+    """Raised when a symlink file comes in AddFiles logic. This is a user error."""
 
     def __init__(self, *args: object) -> None:
-        super().__init__(*args, message="Symlink file came in AddFiles logic")
+        super().__init__(
+            *args,
+            message=(
+                "The selected file path is a symbolic link.\n\n"
+                + "Dotman only manages real files and directories.\n"
+                + "Add the symlink target instead."
+            ),
+        )
 
 
 class FileDoesNotExistError(DotmanError):
@@ -22,7 +28,9 @@ class IsNotASubPathError(DotmanError):
     """Raised when a path is not a subpath of the home directory. This is a user error."""
 
     def __init__(self, file: Path) -> None:
-        super().__init__(message=f"file `{file}` is not a subpath of the home directory")
+        super().__init__(
+            message=f"file `{file}` is not a subpath of the home directory"
+        )
 
 
 class FileOutsideHomeError(DotmanError):
@@ -58,7 +66,9 @@ class FileNameCollidingError(DotmanError):
     """Raised when the target file name present in dotfiles directory"""
 
     def __init__(self, file: Path) -> None:
-        super().__init__(message=f"Target file `{file}` name is colliding inside home directory")
+        super().__init__(
+            message=f"Target file `{file}` name is colliding inside home directory"
+        )
 
 
 class PackageNotExistsError(DotmanError):

@@ -26,7 +26,9 @@ def lab(tmp_path: Path) -> LabPaths:
     profile_root = dotfiles / "profiles" / profile
     profile_root.mkdir(parents=True)
 
-    return LabPaths(home=home, dotfiles_dir=dotfiles, profile=profile, profile_root=profile_root)
+    return LabPaths(
+        home=home, dotfiles_dir=dotfiles, profile=profile, profile_root=profile_root
+    )
 
 
 class TestPermissionCheck:
@@ -34,7 +36,12 @@ class TestPermissionCheck:
         home_pth, dotfile_pth = lab.home, lab.dotfiles_dir
 
         lab.profile_root.mkdir(exist_ok=True)
-        doctor = Doctor(home_dir=home_pth, dotfile_dir=dotfile_pth, detail=False, profile_name=lab.profile)
+        doctor = Doctor(
+            home_dir=home_pth,
+            dotfile_dir=dotfile_pth,
+            detail=False,
+            profile_name=lab.profile,
+        )
         dotfile_pth.chmod(0o555)
         check = doctor.check_permissions_dotfiles()
         assert check.status == DoctorStatus.ERROR
@@ -47,7 +54,12 @@ class TestPermissionCheck:
         home_pth, dotfiles_pth = lab.home, lab.dotfiles_dir
 
         home_pth.mkdir(exist_ok=True)
-        doctor = Doctor(home_dir=home_pth, dotfile_dir=dotfiles_pth, detail=False, profile_name=lab.profile)
+        doctor = Doctor(
+            home_dir=home_pth,
+            dotfile_dir=dotfiles_pth,
+            detail=False,
+            profile_name=lab.profile,
+        )
         home_pth.chmod(0o555)
         check = doctor.check_permissions_home()
         assert check.status == DoctorStatus.ERROR
@@ -67,7 +79,10 @@ class TestSymlink:
         self.profile_root.mkdir(parents=True, exist_ok=True)
         self.home_dir.mkdir(exist_ok=True)
         self.doctor = Doctor(
-            home_dir=self.home_dir, dotfile_dir=self.dotfiles_dir, detail=False, profile_name=self.profile
+            home_dir=self.home_dir,
+            dotfile_dir=self.dotfiles_dir,
+            detail=False,
+            profile_name=self.profile,
         )
 
     def test_missing_taget(self):
@@ -88,7 +103,9 @@ class TestSymlink:
         link_file = self.home_dir / "link.txt"
         link_file.symlink_to(broken_target)
 
-        status = self.doctor.get_symlink_status(source=Path("not_needed"), target=link_file)
+        status = self.doctor.get_symlink_status(
+            source=Path("not_needed"), target=link_file
+        )
         assert status == SymlinkStatus.BROKEN_SYMLINK
 
     def test_not_a_symlink(self):
