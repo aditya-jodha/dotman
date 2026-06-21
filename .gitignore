@@ -17,6 +17,10 @@ htmlcov/
 
 .DS_Store
 
+Dockerfile
+
+assets
+
 # Virtual environments
 .venv/
 .env/

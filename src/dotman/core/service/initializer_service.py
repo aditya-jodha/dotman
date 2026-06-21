@@ -18,11 +18,11 @@ class InitializerService:
         if self.initializer.is_old_dotfiles_exist:
             if self.initializer.is_backup_exist:
                 raise DotmanDotfilesBackupDirExistsError(self.dotfiles_dir)
+
             self.initializer.convert_to_backup()
-        else:
-            self.initializer.make_dir()
 
         self.initializer.make_dir()
         self.initializer.create_meta(current_profile)
         self.initializer.create_profile(current_profile)
+
         return self.initializer

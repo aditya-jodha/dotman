@@ -26,8 +26,7 @@ class Initializer:
 
     def make_dir(self):
         """Creates the dotfiles directory."""
-        if not self.dotfiles_dir.exists():
-            self.dotfiles_dir.mkdir()
+        self.dotfiles_dir.mkdir(parents=True, exist_ok=True)
 
     def create_meta(self, current_profile: str):
         """Creates the metadata file."""

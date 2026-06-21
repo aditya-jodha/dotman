@@ -94,10 +94,12 @@ def add(
                 f"Target file `{add_service.file}` is dotfiles directory path",
                 style="Red",
             )
+            return
         case AddErrors.FileNameCollidingError:
             console.print(
                 f"File name `{file.name}` exists in dotfiles directory", style="Red"
             )
+            return
         case None:
             # None means everything is fine.
             pass

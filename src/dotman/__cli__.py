@@ -11,9 +11,13 @@ app.add_typer(profile, name="profile", help="Manage profiles.")
 console = Console()
 
 
-if __name__ == "__main__":
+def main() -> None:
     try:
         app()
     except KeyboardInterrupt:
         console.print("\n[red]Process interrupted. Exiting safely.[/]")
         sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

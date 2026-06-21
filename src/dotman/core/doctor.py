@@ -3,6 +3,7 @@ from enum import Enum
 from pathlib import Path
 
 from dotman.core.config import InternalFileSystemObject
+from dotman.core.utils.fs import FileSystemUtil
 
 
 class DoctorStatus(Enum):
@@ -65,7 +66,11 @@ class Doctor:
         if self.valid_dir.status == DoctorStatus.OK:
             self.packages = [
                 p
-                for p in (self.dotfiles_dir / "profiles" / self.profile_name).iterdir()
+                for p in (
+                    self.dotfiles_dir
+                    / InternalFileSystemObject.PROFILES.value
+                    / self.profile_name
+                ).iterdir()
                 if p.is_dir()
             ]
 
@@ -111,7 +116,7 @@ class Doctor:
 
     def has_files(self, pkg: Path):
         """Recurively check if there are any files in the package."""
-        return any(item.is_file() or item.is_symlink() for item in pkg.rglob("*"))
+        return FileSystemUtil()(pkg)
 
     def is_internal_package(self, pkg: Path):
         return pkg.name in InternalFileSystemObject.values()
@@ -158,6 +163,16 @@ class Doctor:
             for source in pkg.rglob("*"):
                 if source.is_file() or source.is_symlink():
                     target = self.home_dir / source.relative_to(pkg)
+
+                    if not target.parent.exists():
+                        checks.append(
+                            DoctorCheck(
+                                name=f"{pkg.name}:{source.relative_to(pkg)}",
+                                status=DoctorStatus.ERROR,
+                                message=f"Missing parent structure: Environment lacks directory '{target.parent}'.",
+                            )
+                        )
+                        continue
 
                     status = self.get_symlink_status(source, target)
                     match status:

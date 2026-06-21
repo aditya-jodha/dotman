@@ -10,6 +10,7 @@ from dotman.core.config import (
     load_config,
     make_temp_log_file,
 )
+from dotman.core.utils.fs import FileSystemUtil
 from dotman.errors.custom_errors import (
     FileDoesNotExistError,
     FileNameCollidingError,
@@ -108,7 +109,11 @@ class AddFiles:
 
     @property
     def profile_root(self):
-        return self.dotfiles_dir / "profiles" / self.profile_name
+        return (
+            self.dotfiles_dir
+            / InternalFileSystemObject.PROFILES.value
+            / self.profile_name
+        )
 
     def is_file_in_package(self):
         """Check name collision."""
@@ -191,7 +196,7 @@ class AddFiles:
         )
 
         # Returns True if at least one item inside is a regular file
-        return any(item.is_file() for item in path.iterdir())
+        return FileSystemUtil()(path)
 
     def validate_directory_symlinks(self) -> list[SymlinkCheck]:
         """

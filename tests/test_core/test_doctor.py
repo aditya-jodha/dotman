@@ -240,6 +240,25 @@ class TestIsSymlinked:
         assert checks[0].status == DoctorStatus.OK
         assert "All files in packages are properly symlinked" in checks[0].message
 
+    def test_is_symlinked_missing_parent_structure(self, tmp_path: Path):
+        home = tmp_path / "home"
+        home.mkdir()
+        dotfiles = tmp_path / "dotfiles"
+        dotfiles.mkdir()
+        pkg = dotfiles / "profiles" / "default" / "pkg1"
+        pkg.mkdir(parents=True)
+
+        # Create a nested folder in pkg
+        nested = pkg / "missing_parent"
+        nested.mkdir()
+        src = nested / "file.txt"
+        src.write_text("hello")
+
+        # Note: we do NOT create home/missing_parent
+        doctor = Doctor("default", home, dotfiles, detail=False)
+        checks = doctor.is_symlinked()
+        assert any("Missing parent structure" in c.message for c in checks)
+
 
 class TestSummaryAndRunAll:
     def test_summary_counts(self, lab: LabPaths):
