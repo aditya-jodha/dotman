@@ -1,11 +1,13 @@
 ---
-
 name: Bug Report
 about: Report a bug or unexpected behavior
 title: "[BUG] "
 labels: bug
 assignees: ""
--------------
+
+---
+
+----------
 
 ## Description
 
@@ -33,9 +35,9 @@ Paste output here
 
 ## Environment
 
-* OS:
-* Python Version:
-* Dotman Version:
+* OS: [MacOS, Linux]
+* Python Version: [3.12+]
+* Dotman Version: [eg. 0.6.3, etc]
 
 ## Additional Context
 
