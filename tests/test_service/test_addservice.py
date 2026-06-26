@@ -42,7 +42,9 @@ def test_validate_calls_addfiles_validate(tmp_path: Path):
     service.add_files.validate.assert_called_once()
 
 
-def test_preview_returns_warnings_and_package_created(tmp_path: Path, monkeypatch: MonkeyPatch):
+def test_preview_returns_warnings_and_package_created(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+):
     service = setup_addservice(tmp_path)
 
     # Mock validate and symlink checks
@@ -55,7 +57,9 @@ def test_preview_returns_warnings_and_package_created(tmp_path: Path, monkeypatc
     )
 
     # Patch the property package_exists to return False
-    monkeypatch.setattr(type(service.add_files), "package_exists", property(lambda self: False))
+    monkeypatch.setattr(
+        type(service.add_files), "package_exists", property(lambda self: False)
+    )
 
     preview = service.preview()
     assert isinstance(preview, Preview)
@@ -66,7 +70,9 @@ def test_preview_returns_warnings_and_package_created(tmp_path: Path, monkeypatc
 def test_add_creates_package_and_moves_file(tmp_path: Path, monkeypatch: MonkeyPatch):
     service = setup_addservice(tmp_path)
 
-    monkeypatch.setattr(type(service.add_files), "package_exists", property(lambda self: False))
+    monkeypatch.setattr(
+        type(service.add_files), "package_exists", property(lambda self: False)
+    )
 
     service.add_files.create_package = MagicMock()
     service.add_files.move_file_to_dotfiles = MagicMock()
@@ -80,7 +86,9 @@ def test_add_skips_create_if_exists(tmp_path: Path, monkeypatch: MonkeyPatch):
     service = setup_addservice(tmp_path)
 
     # Patch property to simulate package already existing
-    monkeypatch.setattr(type(service.add_files), "package_exists", property(lambda self: True))
+    monkeypatch.setattr(
+        type(service.add_files), "package_exists", property(lambda self: True)
+    )
 
     service.add_files.create_package = MagicMock()
     service.add_files.move_file_to_dotfiles = MagicMock()
@@ -108,6 +116,8 @@ def test_rollback_changes_calls_journal_and_delete(tmp_path: Path):
 
 def test_tree_calls_print_beautiful_directory(tmp_path: Path):
     service = setup_addservice(tmp_path)
-    with patch("dotman.core.service.add_service.print_beautiful_directory") as mock_print:
+    with patch(
+        "dotman.core.service.add_service.print_beautiful_directory"
+    ) as mock_print:
         service.tree()
         mock_print.assert_called_once_with(service.add_files.profile_root)

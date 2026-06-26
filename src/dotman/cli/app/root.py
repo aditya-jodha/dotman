@@ -14,6 +14,7 @@ app = typer.Typer(help="A CLI tool to manage your dotfiles.", no_args_is_help=Tr
 @app.command(
     help="Creates dotfile folder and if previous folder exists then makes it as backup then creates new dotfile folder."
 )
+@handle_errors
 def init():
     from dotman.cli.app.init import init  # noqa: PLC0415
 
@@ -28,7 +29,9 @@ def sync(
     package_name: str | None = typer.Option(
         None, "--package", help="Sync only this package. Syncs all packages by default."
     ),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be linked without changing files."),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Show what would be linked without changing files."
+    ),
 ):
     from dotman.cli.app.sync import sync  # noqa: PLC0415
 
@@ -40,7 +43,9 @@ def sync(
 @require_initialized
 @require_profile
 def doctor(
-    detail: bool = typer.Option(False, "-a", "--all", help="Show detailed information."),
+    detail: bool = typer.Option(
+        False, "-a", "--all", help="Show detailed information."
+    ),
 ):
     from dotman.cli.app.doctor import doctor  # noqa: PLC0415
 
@@ -53,7 +58,9 @@ def doctor(
 @require_profile
 def add(
     file: Path = typer.Argument(..., help="The file to be added."),
-    package_name: str | None = typer.Option(None, "--package", help="The package name to which the file belongs."),
+    package_name: str | None = typer.Option(
+        None, "--package", help="The package name to which the file belongs."
+    ),
 ):
     from dotman.cli.app.add import add  # noqa: PLC0415
 

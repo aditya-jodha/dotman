@@ -117,6 +117,7 @@ ruff format .
 ```text
 .
 ├── CONTRIBUTING.md
+├── Dockerfile
 ├── LICENSE
 ├── pyproject.toml
 ├── README.md
@@ -131,14 +132,18 @@ ruff format .
 │       │   │   ├── add.py
 │       │   │   ├── doctor.py
 │       │   │   ├── init.py
+│       │   │   ├── remove.py
 │       │   │   ├── root.py
 │       │   │   └── sync.py
 │       │   ├── common_func.py
+│       │   ├── completion.py
 │       │   ├── config
 │       │   │   ├── __init__.py
-│       │   │   └── main.py
-│       │   ├── profile
 │       │   │   └── root.py
+│       │   ├── profile
+│       │   │   ├── __init__.py
+│       │   │   ├── root.py
+│       │   │   └── use.py
 │       │   └── tree_builder.py
 │       ├── core
 │       │   ├── __init__.py
@@ -155,30 +160,43 @@ ruff format .
 │       │   │   ├── doctor_service.py
 │       │   │   ├── initializer_service.py
 │       │   │   ├── profile_service.py
+│       │   │   ├── remove_service.py
 │       │   │   └── sync_service.py
-│       │   └── utils
-│       │       └── fs.py
+│       │   ├── utils
+│       │   │   └── fs.py
+│       │   └── validator.py
 │       └── errors
 │           ├── __init__.py
 │           ├── custom_errors.py
 │           ├── dotman_error.py
 │           ├── initializer_errors.py
-│           └── profile_errors.py
+│           ├── profile_errors.py
+│           └── validator_errors.py
 ├── tests
 │   ├── test_cli
-│   │   └── test_entry_point.py
-│   └── test_core
-│       ├── test_add.py
-│       ├── test_doctor.py
-│       ├── test_dotman_confif.py
-│       ├── test_get_internal_data.py
-│       ├── test_initializer.py
-│       ├── test_linker.py
-│       ├── test_logbook.py
-│       ├── test_profile.py
-│       ├── test_unlinker.py
-│       └── test_utils
-│           └── test_fs.py
+│   │   ├── __init__.py
+│   │   ├── test_app
+│   │   │   ├── __init__.py
+│   │   │   └── test_add.py
+│   │   ├── test_entry_point.py
+│   │   └── test_tree_builder.py
+│   ├── test_core
+│   │   ├── __init__.py
+│   │   ├── test_add.py
+│   │   ├── test_doctor.py
+│   │   ├── test_dotman_confif.py
+│   │   ├── test_get_internal_data.py
+│   │   ├── test_initializer.py
+│   │   ├── test_Journal.py
+│   │   ├── test_linker.py
+│   │   ├── test_profile.py
+│   │   ├── test_unlinker.py
+│   │   ├── test_utils
+│   │   │   └── test_fs.py
+│   │   └── test_validator.py
+│   └── test_service
+│       ├── test_addservice.py
+│       └── test_profileservice.py
 └── uv.lock
 ```
 

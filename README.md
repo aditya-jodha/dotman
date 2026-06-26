@@ -63,7 +63,56 @@ ______________________________________________________________________
 
 Manage completely separate environments.
 
-For more information, please check [PROFILE.md](PROFILE.md)
+## 🏗️ Project Structure
+
+Below is the organizational layout of the repository:
+
+```mermaid
+graph LR
+    %% Core Nodes
+    Root{"📂 profiles/ <br> <sub>Root Directory</sub>"}
+    Pers("📁 personal/ <br> <sub>Private configurations</sub>")
+    Work("📁 work/ <br> <sub>Enterprise environments</sub>")
+    Serv("📁 server/ <br> <sub>Self-hosted deployment</sub>")
+
+    %% Connections
+    Root ---> Pers
+    Root ---> Work
+    Root ---> Serv
+
+    %% Premium Styling
+    style Root fill:#1f6feb,stroke:#58a6ff,stroke-width:2px,color:#fff
+    classDef folder fill:#21262d,stroke:#30363d,stroke-width:1px,color:#c9d1d9;
+    class Pers,Work,Serv folder;
+```
+
+> Switch between profiles seamlessly.
+
+create a profile:
+
+```console
+$ dotman profile create personal
+```
+
+Switch between profiles seamlessly:
+
+- Dotman automatically:
+  1. Unlinks files from the active profile
+  1. Updates profile metadata
+  1. Links files from the new profile
+
+```console
+$ dotman profile use work
+Switched to profile: work
+
+                                                                Profile Action Log (work)
+┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┓
+┃ Operation ┃ Source Path                                            ┃ Target Path                                ┃     Status     ┃ Details             ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━┩
+│ Unlink    │ /tmp/dotman-lab/dotfiles/profiles/personal/nvim/.conf… │ /tmp/dotman-lab/home/.config/nvim/init.vim │ missing_target │ Not Removed         │
+│ Link      │ /private/tmp/dotman-lab/dotfiles/profiles/work/git/.g… │ /tmp/dotman-lab/home/.gitignore            │       ok       │ linked successfully │
+└───────────┴────────────────────────────────────────────────────────┴────────────────────────────────────────────┴────────────────┴─────────────────────┘
+```
 
 ______________________________________________________________________
 
@@ -141,8 +190,7 @@ ______________________________________________________________________
 
 ### Automatic Backups
 
-> When conflicts occur, Dotman can safely move existing files into a backup location before linking. (This still needs
-> to make it more robust)
+> When conflicts occur, Dotman can safely move existing files into a backup location before linking. (This still needs to make it more robust)
 
 ______________________________________________________________________
 
@@ -170,7 +218,45 @@ ______________________________________________________________________
 
 ## Installation
 
-For installation guide please check [![Install guide](https://img.shields.io/badge/Installation_Guide-BLUE)](INSTALL.md)
+### Install from **`uv`** package manager (Recommended):
+
+- Install `uv` from [Astral Shell](https://astral.sh/uv)
+
+  ```bash
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  ```
+
+- Run Dotman instantly with **uvx** (no local install required):
+
+  ```bash
+  uvx --from git+https://github.com/aditya-jodha/dotman.git dotman --help
+  ```
+
+- If you prefer to install it globally to your environment:
+
+  ```bash
+  uv tool install git+https://github.com/aditya-jodha/dotman.git
+  dotman --help
+  ```
+
+### Install from source (Traditional):
+
+```bash
+git clone https://github.com/your-username/dotman.git
+cd dotman
+```
+
+Install dependencies:
+
+```bash
+uv sync
+```
+
+Run:
+
+```bash
+uv run dotman --help
+```
 
 ______________________________________________________________________
 
@@ -267,16 +353,16 @@ ______________________________________________________________________
 
 ## Commands
 
-| Command                 | Description             |
-|-------------------------|-------------------------|
-| `dotman init`           | Initialize Dotman       |
-| `dotman add`            | Add a file or directory |
-| `dotman sync`           | Create symlinks         |
-| `dotman doctor`         | Verify symlink health   |
-| `dotman profile create` | Create profile          |
-| `dotman profile use`    | Switch profile          |
-| `dotman profile delete` | Delete profile          |
-| `dotman profile list`   | List profiles           |
+| Command | Description |
+| ----------------------- | ----------------------- |
+| `dotman init` | Initialize Dotman |
+| `dotman add` | Add a file or directory |
+| `dotman sync` | Create symlinks |
+| `dotman doctor` | Verify symlink health |
+| `dotman profile create` | Create profile |
+| `dotman profile use` | Switch profile |
+| `dotman profile delete` | Delete profile |
+| `dotman profile list` | List profiles |
 
 ______________________________________________________________________
 
@@ -284,14 +370,14 @@ ______________________________________________________________________
 
 - Core components:
 
-  | File                   | Purpose                                                    |
-    |------------------------|------------------------------------------------------------|
-  | `linker.py`            | Linking & unlinking files                                  |
-  | `add.py`               | Add files to dotfiles folder                               |
-  | `doctor.py`            | Verify symlink, dotfiles, homedir health                   |
-  | `profile.py`           | Manage profiles: get, create, delete                       |
+  | File | Purpose |
+  | --- | --- |
+  | `linker.py` | Linking & unlinking files |
+  | `add.py` | Add files to dotfiles folder |
+  | `doctor.py` | Verify symlink, dotfiles, homedir health |
+  | `profile.py` | Manage profiles: get, create, delete |
   | `get_internal_data.py` | Get internal data (e.g. current_profile from metadata.yml) |
-  | `config.py`            | Handle configurations (dotfiles folder name, etc)          |
+  | `config.py` | Handle configurations (dotfiles folder name, etc) |
 
   ```mermaid
   flowchart TB
@@ -305,13 +391,13 @@ ______________________________________________________________________
 
 - Service layer: (works as a Orchestration layer)
 
-  | File                     | Purpose                                                         |
-    |--------------------------|-----------------------------------------------------------------|
-  | `profile_service.py`     | Connects CLI profile commands → core `profile.py` + `linker.py` |
-  | `doctor_service.py`      | Connects CLI doctor command → core `doctor.py`                  |
-  | `add_service.py`         | Connects CLI add command → core `add.py`                        |
-  | `sync_service.py`        | Connects CLI sync command → core `linker.py`                    |
-  | `initializer_service.py` | Connects CLI init command → core `config.py`                    |
+  | File | Purpose |
+  | --- | --- |
+  | `profile_service.py` | Connects CLI profile commands → core `profile.py` + `linker.py` |
+  | `doctor_service.py` | Connects CLI doctor command → core `doctor.py` |
+  | `add_service.py` | Connects CLI add command → core `add.py` |
+  | `sync_service.py` | Connects CLI sync command → core `linker.py` |
+  | `initializer_service.py` | Connects CLI init command → core `config.py` |
 
   ```mermaid
   flowchart LR
@@ -322,7 +408,7 @@ ______________________________________________________________________
       service --> CLI_app_Init    --> initializer_service.py --> config.py
   ```
 
-  > This separation keeps business logic independent of CLI commands.
+  > This separation keeps business logic independent from CLI commands.
 
 - Overall architecture:
 
@@ -421,8 +507,7 @@ ______________________________________________________________________
 
 Dotman started as a learning project.
 
-The goal was not just to create another dotfile manager, but to understand how real command-line applications are
-designed:
+The goal was not just to create another dotfile manager, but to understand how real command-line applications are designed:
 
 - filesystem operations
 - symlink management

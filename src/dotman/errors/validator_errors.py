@@ -10,7 +10,9 @@ class DotmanNotInitializedError(DotmanError):
 
 class DotmanProfileNotInitializedError(DotmanError):
     def __init__(self):
-        self.message = "Dotman profile is not initialized\nRun 'dotman profile init' first."
+        self.message = (
+            "Dotman profile is not initialized\nRun 'dotman profile init' first."
+        )
         super().__init__(self.message)
 
 

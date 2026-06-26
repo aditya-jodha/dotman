@@ -36,7 +36,9 @@ class TestHelperFunctions:
         assert cli.get_user_choice() is False
 
     @staticmethod
-    def test_get_user_choice_invalid_then_yes(monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]):
+    def test_get_user_choice_invalid_then_yes(
+        monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]
+    ):
         responses = iter(["x", "y"])
         monkeypatch.setattr(cli, "_get_single_key_safe", make_responses(responses))
 
@@ -47,9 +49,13 @@ class TestHelperFunctions:
         assert "Invalid choice" in out
 
     @staticmethod
-    def test_get_user_choice_invalid_then_no(monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]):
+    def test_get_user_choice_invalid_then_no(
+        monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]
+    ):
 
-        monkeypatch.setattr(cli, "_get_single_key_safe", make_responses(iter(["x", "n"])))
+        monkeypatch.setattr(
+            cli, "_get_single_key_safe", make_responses(iter(["x", "n"]))
+        )
 
         result = cli.get_user_choice()
         out = capsys.readouterr().out
@@ -68,7 +74,9 @@ class TestHelperFunctions:
             cli.get_user_choice()
 
     @staticmethod
-    def test_multiple_invalid_inputs(monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]) -> None:
+    def test_multiple_invalid_inputs(
+        monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]
+    ) -> None:
         responses = iter(["x", "z", "y"])
         monkeypatch.setattr(cli, "_get_single_key_safe", lambda: next(responses))
         result: bool = cli.get_user_choice()
@@ -85,7 +93,11 @@ class TestHelperFunctions:
 
     @staticmethod
     def test_get_user_choice_ctrl_c(monkeypatch: MonkeyPatch):
-        monkeypatch.setattr(cli, "_get_single_key_safe", lambda: (_ for _ in ()).throw(KeyboardInterrupt))
+        monkeypatch.setattr(
+            cli,
+            "_get_single_key_safe",
+            lambda: (_ for _ in ()).throw(KeyboardInterrupt),
+        )
         with pytest.raises(KeyboardInterrupt):
             cli.get_user_choice()
 
@@ -124,7 +136,9 @@ def test_add_requires_package_name(tmp_path: Path):
     file.write_text("hello")
     with patch.object(cli.console, "print") as mock_print:
         cli.add(file, None)
-        mock_print.assert_any_call("Package name is required to add a file.", style="red")
+        mock_print.assert_any_call(
+            "Package name is required to add a file.", style="red"
+        )
 
 
 def test_add_with_warnings_and_cancel(tmp_path: Path, monkeypatch: MonkeyPatch):
@@ -144,7 +158,9 @@ def test_add_with_warnings_and_cancel(tmp_path: Path, monkeypatch: MonkeyPatch):
     fake_service.add.assert_not_called()
 
 
-def test_add_with_warnings_and_continue_commit(tmp_path: Path, monkeypatch: MonkeyPatch):
+def test_add_with_warnings_and_continue_commit(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+):
     file = tmp_path / "f.txt"
     file.write_text("hello")
 

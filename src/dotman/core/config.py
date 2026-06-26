@@ -72,10 +72,10 @@ class LogBookData:
 
 def get_temp_log_file(config_obj: DotmanConfig) -> Path:
     return (
-            config_obj.dotfiles_dir
-            / InternalFileSystemObject.LOGBOOK.value
-            / InternalFileSystemObject.TMP_.value
-            / f"dotman_{uuid4()}.log"
+        config_obj.dotfiles_dir
+        / InternalFileSystemObject.LOGBOOK.value
+        / InternalFileSystemObject.TMP_.value
+        / f"dotman_{uuid4()}.log"
     )
 
 

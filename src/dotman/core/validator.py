@@ -11,7 +11,9 @@ from dotman.errors.validator_errors import (
 
 
 class DotmanValidator:
-    def __init__(self, dotfiles_dir: Path | None = None, home_dir: Path | None = None) -> None:
+    def __init__(
+        self, dotfiles_dir: Path | None = None, home_dir: Path | None = None
+    ) -> None:
         cgf = load_config()
         self.dotfiles_dir = dotfiles_dir or cgf.dotfiles_dir
         self.home_dir = home_dir or cgf.home_dir

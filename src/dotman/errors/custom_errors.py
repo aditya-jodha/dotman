@@ -29,7 +29,9 @@ class IsNotASubPathError(DotmanError):
     """Raised when a path is not a subpath of the home directory. This is a user error."""
 
     def __init__(self, file: Path, of: Literal["home", "dotfiles"] = "home") -> None:
-        super().__init__(message=f"file `{file}` is not a subpath of the {of} directory")
+        super().__init__(
+            message=f"file `{file}` is not a subpath of the {of} directory"
+        )
         self.file = file
 
 

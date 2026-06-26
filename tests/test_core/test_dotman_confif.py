@@ -36,7 +36,9 @@ def test_get_temp_log_file_creates_path(tmp_path: Path):
     assert path.name.startswith("dotman_")
 
 
-def test_get_config_path_default_and_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+def test_get_config_path_default_and_env(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
     # default path
     default = config.get_config_path()
     assert isinstance(default, Path)

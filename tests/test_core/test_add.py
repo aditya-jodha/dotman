@@ -74,7 +74,11 @@ def test_package_exists_property(tmp_path: Path):
 
 def test_profile_root_property(tmp_path: Path):
     addfiles = setup_addfiles(tmp_path)
-    expected = addfiles.dotfiles_dir / InternalFileSystemObject.PROFILES.value / addfiles.profile_name
+    expected = (
+        addfiles.dotfiles_dir
+        / InternalFileSystemObject.PROFILES.value
+        / addfiles.profile_name
+    )
     assert addfiles.profile_root == expected
 
 
@@ -173,7 +177,10 @@ def test_create_and_delete_package(tmp_path: Path):
     addfiles.create_package()
     pkg_path = addfiles.profile_root / addfiles.package
     assert pkg_path.exists()
-    with patch("dotman.core.add.FileSystemUtil.delete_empty_package", return_value=ExitCode.SUCCESS) as mock_delete:
+    with patch(
+        "dotman.core.add.FileSystemUtil.delete_empty_package",
+        return_value=ExitCode.SUCCESS,
+    ) as mock_delete:
         result = addfiles.delete_empty_package()
         assert result == ExitCode.SUCCESS
         mock_delete.assert_called_once_with(addfiles.profile_root, addfiles.destination)
@@ -186,7 +193,8 @@ def test_delete_package_with_files(tmp_path: Path):
     (pkg_path / "file.txt").write_text("keep me")
 
     with patch(
-        "dotman.core.add.FileSystemUtil.delete_empty_package", return_value=ExitCode.INVALID_ARGUMENTS
+        "dotman.core.add.FileSystemUtil.delete_empty_package",
+        return_value=ExitCode.INVALID_ARGUMENTS,
     ) as mock_delete:
         result = addfiles.delete_empty_package()
         assert result == ExitCode.INVALID_ARGUMENTS
@@ -200,7 +208,10 @@ def test_delete_package_with_files(tmp_path: Path):
 
 def test_move_file_to_dotfiles_calls_logbook(tmp_path: Path):
     addfiles = setup_addfiles(tmp_path)
-    with patch.object(addfiles.log_book, "add_entry") as mock_add, patch.object(addfiles.log_book, "save") as mock_save:
+    with (
+        patch.object(addfiles.log_book, "add_entry") as mock_add,
+        patch.object(addfiles.log_book, "save") as mock_save,
+    ):
         result = addfiles.move_file_to_dotfiles()
         assert result == ExitCode.SUCCESS
         mock_add.assert_called_once_with(addfiles.file, addfiles.destination)
@@ -255,7 +266,10 @@ def test_broken_symlink(tmp_path: Path):
 
     addfiles.file = dir_path
     checks = addfiles.validate_directory_symlinks()
-    assert any(c.status == SymlinkStatus.ERROR and "broken symlink" in c.message for c in checks)
+    assert any(
+        c.status == SymlinkStatus.ERROR and "broken symlink" in c.message
+        for c in checks
+    )
 
 
 def test_symlink_loop_runtimeerror(tmp_path, monkeypatch):
@@ -315,7 +329,10 @@ def test_symlink_points_outside_root(tmp_path: Path):
 
     addfiles.file = dir_path
     checks = addfiles.validate_directory_symlinks()
-    assert any(c.status == SymlinkStatus.ERROR and "points outside" in c.message for c in checks)
+    assert any(
+        c.status == SymlinkStatus.ERROR and "points outside" in c.message
+        for c in checks
+    )
 
 
 def test_symlink_points_inside_root(tmp_path: Path):
@@ -329,4 +346,6 @@ def test_symlink_points_inside_root(tmp_path: Path):
 
     addfiles.file = dir_path
     checks = addfiles.validate_directory_symlinks()
-    assert any(c.status == SymlinkStatus.OK and "points inside" in c.message for c in checks)
+    assert any(
+        c.status == SymlinkStatus.OK and "points inside" in c.message for c in checks
+    )

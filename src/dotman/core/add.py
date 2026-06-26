@@ -51,10 +51,12 @@ class RollbackJournal:
             self.path.unlink()
 
     def add_entry(self, original: Path, new: Path) -> None:
-        self.entries.append({
-            self.ORIGINAL_PATH: str(original),
-            self.NEW_PATH: str(new),
-        })
+        self.entries.append(
+            {
+                self.ORIGINAL_PATH: str(original),
+                self.NEW_PATH: str(new),
+            }
+        )
 
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -111,7 +113,11 @@ class AddFiles:
 
     @property
     def profile_root(self) -> Path:
-        return self.dotfiles_dir / InternalFileSystemObject.PROFILES.value / self.profile_name
+        return (
+            self.dotfiles_dir
+            / InternalFileSystemObject.PROFILES.value
+            / self.profile_name
+        )
 
     @property
     def is_file_in_package(self) -> bool:
@@ -176,11 +182,15 @@ class AddFiles:
 
     def file_exists_in_package(self) -> bool:
         """Checks if the file exists in the package directory."""
-        return (self.profile_root / self.package / self.file.relative_to(self.home_dir)).exists()
+        return (
+            self.profile_root / self.package / self.file.relative_to(self.home_dir)
+        ).exists()
 
     def has_files_in_package(self, pkg: str | None = None) -> bool:
         """Checks is any file exists in the package directory."""
-        path = Path(self.profile_root / pkg) if pkg else (self.profile_root / self.package)
+        path = (
+            Path(self.profile_root / pkg) if pkg else (self.profile_root / self.package)
+        )
 
         # Returns True if at least one item inside is a regular file
         return FileSystemUtil()(path)
@@ -218,6 +228,10 @@ class AddFiles:
                     )
                 )
             else:
-                checks.append(SymlinkCheck(path, SymlinkStatus.OK, f"points inside added path: {target}"))
+                checks.append(
+                    SymlinkCheck(
+                        path, SymlinkStatus.OK, f"points inside added path: {target}"
+                    )
+                )
 
         return checks

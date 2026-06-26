@@ -15,7 +15,9 @@ class FileSystemUtil:
 
     def __init__(self, ignore_patterns: Iterable[str] | None = None) -> None:
         """Initialize the utility with optional global pattern filters (e.g., ['.git', '.DS_Store'])."""
-        self.ignore_patterns: list[str] = list(ignore_patterns) if ignore_patterns else []
+        self.ignore_patterns: list[str] = (
+            list(ignore_patterns) if ignore_patterns else []
+        )
 
     def __call__(self, target_dir: Path) -> bool:
         """Allows instantiating and calling the utility seamlessly like a function."""
