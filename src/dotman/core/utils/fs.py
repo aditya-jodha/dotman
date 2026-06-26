@@ -2,6 +2,8 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from dotman.core.config import ExitCode
+
 if TYPE_CHECKING:
     from os import stat_result
 
@@ -13,13 +15,36 @@ class FileSystemUtil:
 
     def __init__(self, ignore_patterns: Iterable[str] | None = None) -> None:
         """Initialize the utility with optional global pattern filters (e.g., ['.git', '.DS_Store'])."""
-        self.ignore_patterns: list[str] = (
-            list(ignore_patterns) if ignore_patterns else []
-        )
+        self.ignore_patterns: list[str] = list(ignore_patterns) if ignore_patterns else []
 
     def __call__(self, target_dir: Path) -> bool:
         """Allows instantiating and calling the utility seamlessly like a function."""
         return self.path_has_files(target_dir)
+
+    @staticmethod
+    def normalize_path(path: Path) -> Path:
+        """Normalizes the path to absolute form."""
+        path = path.expanduser()
+
+        if not path.is_absolute():
+            path = Path.cwd() / path
+
+        return path.resolve(strict=False)
+
+    @staticmethod
+    def delete_empty_package(profile_path: Path, file: Path) -> ExitCode:
+        current = file.parent
+
+        while current != profile_path:
+            if next(current.iterdir(), None) is not None:
+                # If there are any directories/files in the current path, we will not delete the package
+                break
+
+            current.rmdir()
+            current = current.parent
+        else:
+            return ExitCode.SUCCESS
+        return ExitCode.INVALID_ARGUMENTS
 
     @staticmethod
     def get_inode_key(item: Path) -> InodeKey | None:

@@ -1,14 +1,9 @@
 import pathlib
 
-from rich import print
 from rich.tree import Tree
 
-from dotman.core.config import InternalFileSystemObject
 
-
-def _add_to_tree(
-    directory: pathlib.Path, tree_node: Tree, temp_log_file: pathlib.Path
-) -> None:
+def _add_to_tree(directory: pathlib.Path, tree_node: Tree) -> None:
     """Safely loops through directory contents and adds them to the Rich tree."""
     try:
         # Sort so folders stay on top, followed alphabetically by files
@@ -18,17 +13,11 @@ def _add_to_tree(
         return
 
     for item in items:
-        if (
-            item.name in InternalFileSystemObject.values()
-            or item.name == temp_log_file.name
-        ):
-            continue
-
         if item.is_dir():
             # Create a stylized folder branch
             branch = tree_node.add(f"📂 [bold magenta1]{item.name}[/]")
             # Recursively descend into the subfolder
-            _add_to_tree(item, branch, temp_log_file)
+            _add_to_tree(item, branch)
         else:
             # Color-code different file extensions beautifully
             if item.suffix == ".py":
@@ -41,15 +30,14 @@ def _add_to_tree(
                 tree_node.add(f"📄 [bright_white]{item.name}[/]")
 
 
-def print_beautiful_directory(temp_log_file: pathlib.Path, target_path: pathlib.Path):
+def print_beautiful_directory(target_path: pathlib.Path):
     """Initializes the root tree node and triggers the clean printer."""
     root_path = pathlib.Path(target_path).resolve()
 
-    # Base layout frame with custom neon cyan connector lines
     root_tree = Tree(
         f"✨ [bold black on violet] {root_path.name or root_path} [/]",
         guide_style="bold bright_cyan",
     )
 
-    _add_to_tree(root_path, root_tree, temp_log_file)
-    print(root_tree)
+    _add_to_tree(root_path, root_tree)
+    return root_tree

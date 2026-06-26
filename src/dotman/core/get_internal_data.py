@@ -15,9 +15,28 @@ from dotman.core.config import InternalFileSystemObject, load_config
 if TYPE_CHECKING:
     from pathlib import Path
 
+from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
+
 
 class InternalDataArguments(Enum):
     CURRENT_PROFILE = "current_profile"
+
+
+def resolve_profile(explicit_profile: str | None, internal_data: InternalData) -> str:
+    """
+    Decide which profile to use:
+    - If the caller passed a profile, use it.
+    - Otherwise, fall back to the current profile in InternalData.
+    - If neither is available, raise ProfileMetaDataFileCorruptedError.
+    """
+    if explicit_profile is not None:
+        return explicit_profile
+
+    if internal_data.current_profile is not None:
+        return internal_data.current_profile
+
+    # If we reach here, both are None → corrupted metadata
+    raise ProfileMetaDataFileCorruptedError(InternalDataArguments.CURRENT_PROFILE, False)
 
 
 @dataclass
@@ -29,9 +48,7 @@ class InternalData:
     def load(cls, file_path: Path | None = None) -> InternalData:
         """Load the metadata file."""
         if file_path is None:
-            file_path = (
-                load_config().dotfiles_dir / InternalFileSystemObject.METADATA.value
-            )
+            file_path = load_config().dotfiles_dir / InternalFileSystemObject.METADATA.value
 
         data: dict[str, str] = {}
         if not file_path.exists():
@@ -57,9 +74,7 @@ class InternalData:
             exist_ok=True,
         )
         with self.file_path.open("w", encoding="utf-8") as f:
-            yaml.safe_dump(
-                {InternalDataArguments.CURRENT_PROFILE.value: self.current_profile}, f
-            )
+            yaml.safe_dump({InternalDataArguments.CURRENT_PROFILE.value: self.current_profile}, f)
 
     def write(self, profile: str) -> None:
         """Write a new profile to the metadata file."""

@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING
 import typer
 from rich.console import Console
 
+from dotman.core.config import ExitCode
 from dotman.core.service.sync_service import SyncService
-from dotman.errors.custom_errors import InvalidPackageNameError, PackageNotExistsError
 
 if TYPE_CHECKING:
     from dotman.core.linker import LinkResult
@@ -15,18 +15,9 @@ console = Console()
 def sync(package_name: str | None, dry_run: bool):
     service = SyncService(dry_run=dry_run)
 
-    if not service.is_dotfile_home_exits:
-        return
-
     service.load()
-    try:
-        service.initilize_package(package=package_name)
-    except InvalidPackageNameError:
-        console.print(f"Package '{package_name}' does not exist.", style="red")
-        return
-    except PackageNotExistsError:
-        console.print("No packages found to sync.", style="yellow")
-        return
+
+    service.initilize_package(package=package_name)
 
     results: list[LinkResult] = service.execute()
 
@@ -51,6 +42,6 @@ def sync(package_name: str | None, dry_run: bool):
     error_count = sum(result.status == "error" for result in results)
     if error_count:
         console.print(f"Sync completed with {error_count} error(s).", style="red")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=ExitCode.INVALID_ARGUMENTS)
 
     console.print(f"Synced {len(results)} file(s).", style="green")

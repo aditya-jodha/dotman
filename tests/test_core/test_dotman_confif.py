@@ -27,16 +27,16 @@ def test_internal_filesystemobject_values():
     assert "profiles" in vals
 
 
-def test_make_temp_log_file_creates_path(tmp_path: Path):
+def test_get_temp_log_file_creates_path(tmp_path: Path):
     cfg = config.DotmanConfig(dotfiles_dir=tmp_path, home_dir=tmp_path)
-    path = config.make_temp_log_file(cfg)
-    assert path.name.startswith("temp_logbook_")
-    assert path.suffix == ".toml"
+    path = config.get_temp_log_file(cfg)
+
+    assert path.parent.parent.name == "logbook"
+    assert path.suffix == ".log"
+    assert path.name.startswith("dotman_")
 
 
-def test_get_config_path_default_and_env(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-):
+def test_get_config_path_default_and_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     # default path
     default = config.get_config_path()
     assert isinstance(default, Path)

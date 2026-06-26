@@ -35,9 +35,9 @@ Paste output here
 
 ## Environment
 
-* OS: [MacOS, Linux]
+* OS: [macOS, Linux]
 * Python Version: [3.12+]
-* Dotman Version: [eg. 0.6.3, etc]
+* dotman Version: [e.g. 0.6.3, etc]
 
 ## Additional Context
 

@@ -25,9 +25,19 @@ class ProfileNotFoundError(ProfileError):
 
 
 class ProfileMetaDataFileCorruptedError(ProfileError):
-    def __init__(self, argument: Enum):
-        super().__init__(f"MetaData file is corrupted:  {argument.value}")
+    def __init__(self, argument: Enum, profile_exists: bool = True):
+        if profile_exists:
+            message = f"Profile metadata file is corrupted:  {argument.value}"
+        else:
+            message = (
+                f"Profile metadata file is corrupted:  {argument.value} does not exist"
+            )
+        super().__init__(message)
         self.argument = argument
+
+    @property
+    def error(self) -> str:
+        return self.message
 
 
 class DirNotEmptyError(ProfileError):
