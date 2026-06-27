@@ -353,107 +353,22 @@ ______________________________________________________________________
 
 ## Commands
 
-| Command | Description |
+| Command                 | Description             |
 | ----------------------- | ----------------------- |
-| `dotman init` | Initialize Dotman |
-| `dotman add` | Add a file or directory |
-| `dotman sync` | Create symlinks |
-| `dotman doctor` | Verify symlink health |
-| `dotman profile create` | Create profile |
-| `dotman profile use` | Switch profile |
-| `dotman profile delete` | Delete profile |
-| `dotman profile list` | List profiles |
+| `dotman init`           | Initialize Dotman       |
+| `dotman add`            | Add a file or directory |
+| `dotman sync`           | Create symlinks         |
+| `dotman doctor`         | Verify symlink health   |
+| `dotman profile create` | Create profile          |
+| `dotman profile use`    | Switch profile          |
+| `dotman profile delete` | Delete profile          |
+| `dotman profile list`   | List profiles           |
 
 ______________________________________________________________________
 
 ## Architecture
 
-- Core components:
-
-  | File | Purpose |
-  | --- | --- |
-  | `linker.py` | Linking & unlinking files |
-  | `add.py` | Add files to dotfiles folder |
-  | `doctor.py` | Verify symlink, dotfiles, homedir health |
-  | `profile.py` | Manage profiles: get, create, delete |
-  | `get_internal_data.py` | Get internal data (e.g. current_profile from metadata.yml) |
-  | `config.py` | Handle configurations (dotfiles folder name, etc) |
-
-  ```mermaid
-  flowchart TB
-      core --> `linker.py`[linker.py <br> Linking & unlinking files]
-      core --> add.py[add.py <br> Add files to dotfiles folder]
-      core --> doctor.py[doctor.py <br> Verify symlink, dotfiles, homedir health]
-      core --> profile.py[profile.py <br> Manage profiles: get, create, delete]
-      core --> get_internal_data.py[get_internal_data.py <br> Get internal data from metadata.yml]
-      core --> config.py[config.py <br> Handle configurations: dotfiles folder name, etc]
-  ```
-
-- Service layer: (works as a Orchestration layer)
-
-  | File | Purpose |
-  | --- | --- |
-  | `profile_service.py` | Connects CLI profile commands → core `profile.py` + `linker.py` |
-  | `doctor_service.py` | Connects CLI doctor command → core `doctor.py` |
-  | `add_service.py` | Connects CLI add command → core `add.py` |
-  | `sync_service.py` | Connects CLI sync command → core `linker.py` |
-  | `initializer_service.py` | Connects CLI init command → core `config.py` |
-
-  ```mermaid
-  flowchart LR
-      service --> CLI_app_Doctor  --> doctor_service.py  --> doctor.py
-      service --> CLI_app_Profile --> profile_service.py --> profile.py & linker.py
-      service --> CLI_app_Add     --> add_service.py     --> add.py
-      service --> CLI_app_Sync    --> sync_service.py    --> linker.py
-      service --> CLI_app_Init    --> initializer_service.py --> config.py
-  ```
-
-  > This separation keeps business logic independent from CLI commands.
-
-- Overall architecture:
-
-  ```mermaid
-  flowchart TB
-      %% Top-level blocks
-      subgraph CLI["Command-Line Interface (CLI Layer)"]
-          CLI_Profile[profile command]
-          CLI_Doctor[doctor command]
-          CLI_Add[add command]
-          CLI_Sync[sync command]
-          CLI_Init[init command]
-      end
-
-      subgraph Services["Service Layer (Orchestration)"]
-          profile_service[profile_service.py]
-          doctor_service[doctor_service.py]
-          add_service[add_service.py]
-          sync_service[sync_service.py]
-          init_service[initializer_service.py]
-      end
-
-      subgraph Core["Core Layer"]
-          profile_core[profile.py]
-          doctor_core[doctor.py]
-          add_core[add.py]
-          linker_core[linker.py]
-          config_core[config.py]
-      end
-
-      %% Connections
-      CLI_Profile --> profile_service --> profile_core
-      profile_service --> linker_core
-
-      CLI_Doctor --> doctor_service --> doctor_core
-
-      CLI_Add --> add_service --> add_core
-
-      CLI_Sync --> sync_service --> linker_core
-
-      CLI_Init --> init_service --> config_core
-
-  ```
-
-  > Note: config command is not shown in the diagram.
+For better understanding of the architecture, please refer to [Architecture.md](https://github.com/aditya-jodha/dotman/blob/main/ARCHITECTURE.md)
 
 ## How to change the dotfiles folder name
 

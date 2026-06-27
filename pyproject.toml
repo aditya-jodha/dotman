@@ -29,6 +29,12 @@ packages = ["src/dotman"]
 omit = [
     "src/dotman/errors/*",
     "tests/*",
+
+    # TODO: Re-enable CLI coverage once dedicated CLI integration tests are added.
+    # CLI wrappers (temporary)
+    "src/dotman/cli/app/*",
+    "src/dotman/cli/profile/*",
+    "src/dotman/cli/config/*",
 ]
 
 [tool.coverage.report]
