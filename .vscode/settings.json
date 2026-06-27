@@ -66,6 +66,7 @@
         }
     ],
     "python.languageServer": "Pylance",
+    "ty.disableLanguageServices": true,
     "editor.hover.enabled": "on",
     "editor.inlineSuggest.experimental.showOnSuggestConflict": "always"
 }

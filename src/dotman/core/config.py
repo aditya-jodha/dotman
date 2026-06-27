@@ -1,18 +1,26 @@
 import os
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, IntEnum
 from pathlib import Path
 from typing import Literal
 from uuid import uuid4
 
 import yaml
 
-type EXITCODE = int
-type SUCCESSCODE = Literal[0, 1]
+
+class ExitCode(IntEnum):
+    SUCCESS = 0
+    INVALID_ARGUMENTS = 1
+    NETWORK_ERROR = 2
+    DATABASE_FAILURE = 3
+    KEYBOARD_INTERRUPT = 4
+    DOTFILES_FAILURE = 5
+
+
+type SUCCESSOR = Literal[0, 1]
 type StrPath = str | Path
 type HomeDir = Path
 type DotfilesDir = Path
-
 
 DEFAULT_HOME_DIR = Path.home()
 DEFAULT_DOTFILES_DIR = DEFAULT_HOME_DIR / ".dotfiles"
@@ -48,6 +56,8 @@ class InternalFileSystemObject(Enum):
     PACKAGES = "packages"
     METADATA = "metadata.yml"
     PROFILES = "profiles"
+    LOGBOOK = "logbook"
+    TMP_ = "tmp"
 
     @classmethod
     def values(cls) -> set[str]:
@@ -60,8 +70,13 @@ class LogBookData:
     new_path: Path
 
 
-def make_temp_log_file(config_obj: DotmanConfig) -> Path:
-    return config_obj.dotfiles_dir / f"temp_logbook_{uuid4().hex[:8]}.toml"
+def get_temp_log_file(config_obj: DotmanConfig) -> Path:
+    return (
+        config_obj.dotfiles_dir
+        / InternalFileSystemObject.LOGBOOK.value
+        / InternalFileSystemObject.TMP_.value
+        / f"dotman_{uuid4()}.log"
+    )
 
 
 def get_config_path() -> Path:

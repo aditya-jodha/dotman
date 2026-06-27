@@ -1,40 +1,28 @@
-from pathlib import Path
+from collections.abc import Callable
+from functools import wraps
 
+import typer
 from rich.console import Console
 
-from dotman.core.config import StrPath
+from dotman.core.config import ExitCode, StrPath
+from dotman.errors.dotman_error import DotmanError
 
 console = Console()
 
 
-def check_file_exists(home_location: Path, dotfiles_location: Path) -> bool:
-    """Check if the dotfiles directory and home directory exist."""
+def handle_errors[**P, R](func: Callable[P, R]) -> Callable[P, R]:
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        try:
+            return func(*args, **kwargs)
+        except DotmanError as e:
+            console.print(f"[red]{e.message}[/red]")
+            raise typer.Exit(code=ExitCode.DOTFILES_FAILURE) from e
+        except KeyboardInterrupt as e:
+            console.print(f"[red]Error: {str(e)} Operation cancelled by user.[/red]")
+            raise typer.Exit(code=ExitCode.KEYBOARD_INTERRUPT) from e
 
-    if home_location.exists():
-        if not home_location.is_dir():
-            console.print(
-                f"Home directory '{home_location}' exists but is not a directory.",
-                style="red",
-            )
-            return False
-    else:
-        console.print(f"Home directory '{home_location}' does not exist.", style="red")
-        return False
-
-    if dotfiles_location.exists():
-        if not dotfiles_location.is_dir():
-            console.print(
-                f"Dotfiles directory '{dotfiles_location}' exists but is not a directory.",
-                style="red",
-            )
-            return False
-    else:
-        console.print(
-            f"Dotfiles directory '{dotfiles_location}' does not exist.", style="red"
-        )
-        return False
-
-    return True
+    return wrapper
 
 
 def sanitize_package_name(package: StrPath) -> str:

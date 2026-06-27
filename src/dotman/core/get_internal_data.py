@@ -15,9 +15,30 @@ from dotman.core.config import InternalFileSystemObject, load_config
 if TYPE_CHECKING:
     from pathlib import Path
 
+from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
+
 
 class InternalDataArguments(Enum):
     CURRENT_PROFILE = "current_profile"
+
+
+def resolve_profile(explicit_profile: str | None, internal_data: InternalData) -> str:
+    """
+    Decide which profile to use:
+    - If the caller passed a profile, use it.
+    - Otherwise, fall back to the current profile in InternalData.
+    - If neither is available, raise ProfileMetaDataFileCorruptedError.
+    """
+    if explicit_profile is not None:
+        return explicit_profile
+
+    if internal_data.current_profile is not None:
+        return internal_data.current_profile
+
+    # If we reach here, both are None → corrupted metadata
+    raise ProfileMetaDataFileCorruptedError(
+        InternalDataArguments.CURRENT_PROFILE, False
+    )
 
 
 @dataclass

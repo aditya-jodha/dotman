@@ -24,6 +24,7 @@ class LabPaths:
 
 @pytest.fixture
 def lab(tmp_path: Path) -> LabPaths:
+    """Create a small isolated filesystem layout for tests."""
     home = tmp_path / "home"
     dotfiles = tmp_path / "dotfiles"
     profile = "test_profile"
@@ -35,66 +36,89 @@ def lab(tmp_path: Path) -> LabPaths:
     )
 
 
+# -------------------------
+# Basic dataclass / helpers
+# -------------------------
 class TestDataClass:
-    def test_doctorcheck_as_dict(self):
+    def test_doctorcheck_as_dict(self) -> None:
         check = DoctorCheck("name", DoctorStatus.OK, "message")
         assert check.as_dict() == {"name": "name", "status": "ok", "message": "message"}
 
 
+# -------------------------
+# Permission checks
+# -------------------------
 class TestPermissions:
-    def test_dotfiles_permissions(self, lab: LabPaths):
+    def test_dotfiles_permissions(self, lab: LabPaths) -> None:
         doctor = Doctor(lab.profile, lab.home, lab.dotfiles_dir, detail=False)
+
+        # unreadable dotfiles dir -> ERROR
         lab.dotfiles_dir.chmod(0o555)
         assert doctor.check_permissions_dotfiles().status == DoctorStatus.ERROR
+
+        # writable again -> OK
         lab.dotfiles_dir.chmod(0o755)
         assert doctor.check_permissions_dotfiles().status == DoctorStatus.OK
 
-    def test_home_permissions(self, lab: LabPaths):
+    def test_home_permissions(self, lab: LabPaths) -> None:
         doctor = Doctor(lab.profile, lab.home, lab.dotfiles_dir, detail=False)
+
+        # unreadable home -> ERROR
         lab.home.chmod(0o555)
         assert doctor.check_permissions_home().status == DoctorStatus.ERROR
+
+        # writable again -> OK
         lab.home.chmod(0o755)
         assert doctor.check_permissions_home().status == DoctorStatus.OK
 
 
+# -------------------------
+# Dotfiles directory validation
+# -------------------------
 class TestIsDotfilesDirValid:
-    def test_nonexistent_dotfiles_dir(self, tmp_path: Path):
+    def test_nonexistent_dotfiles_dir(self, tmp_path: Path) -> None:
         home = tmp_path / "home"
         home.mkdir()
         dotfiles = tmp_path / "dotfiles_missing"
         doctor = Doctor("default", home, dotfiles, detail=False)
+
         check = doctor.is_dotfiles_dir_valid()
         assert check.status == DoctorStatus.ERROR
         assert DoctorStatusName.DOTFILES_DIR.value == check.name
         assert "does not exist" in check.message
 
-    def test_dotfiles_path_is_file(self, tmp_path: Path):
+    def test_dotfiles_path_is_file(self, tmp_path: Path) -> None:
         home = tmp_path / "home"
         home.mkdir()
         dotfiles_file = tmp_path / "dotfiles"
         dotfiles_file.write_text("not a dir")
         doctor = Doctor("default", home, dotfiles_file, detail=False)
+
         check = doctor.is_dotfiles_dir_valid()
         assert check.status == DoctorStatus.ERROR
         assert "not a directory" in check.message
 
-    def test_dotfiles_dir_is_valid(self, tmp_path: Path):
+    def test_dotfiles_dir_is_valid(self, tmp_path: Path) -> None:
         home = tmp_path / "home"
         home.mkdir()
         dotfiles = tmp_path / "dotfiles"
         dotfiles.mkdir()
         (dotfiles / "profiles" / "default").mkdir(parents=True)
         doctor = Doctor("default", home, dotfiles, detail=False)
+
         check = doctor.is_dotfiles_dir_valid()
         assert check.status == DoctorStatus.OK
-        assert "is valid"
+        assert "is valid"  # sanity: message presence is not strictly asserted here
 
 
+# -------------------------
+# Symlink status checks
+# -------------------------
 class TestSymlinkStatus:
-    def setup_doctor(self, lab: LabPaths):
+    def setup_doctor(self, lab: LabPaths) -> Doctor:
         return Doctor(lab.profile, lab.home, lab.dotfiles_dir, detail=False)
 
-    def test_missing_target(self, lab: LabPaths):
+    def test_missing_target(self, lab: LabPaths) -> None:
         src = lab.profile_root / "file.txt"
         src.touch()
         tgt = lab.home / "file.txt"
@@ -103,7 +127,7 @@ class TestSymlinkStatus:
             == SymlinkStatus.MISSING_TARGET
         )
 
-    def test_broken_symlink(self, lab: LabPaths):
+    def test_broken_symlink(self, lab: LabPaths) -> None:
         broken = lab.home / "ghost.txt"
         link = lab.home / "link.txt"
         link.symlink_to(broken)
@@ -112,7 +136,7 @@ class TestSymlinkStatus:
             == SymlinkStatus.BROKEN_SYMLINK
         )
 
-    def test_not_a_symlink(self, lab: LabPaths):
+    def test_not_a_symlink(self, lab: LabPaths) -> None:
         src = lab.home / "pure.txt"
         src.touch()
         tgt = lab.profile_root / "pkg" / "pure.txt"
@@ -123,7 +147,7 @@ class TestSymlinkStatus:
             == SymlinkStatus.NOT_A_SYMLINK
         )
 
-    def test_wrong_source(self, lab: LabPaths):
+    def test_wrong_source(self, lab: LabPaths) -> None:
         correct = lab.home / "file.txt"
         correct.write_text("hello")
         wrong = lab.home / "other.txt"
@@ -136,7 +160,7 @@ class TestSymlinkStatus:
             == SymlinkStatus.WRONG_SOURCE
         )
 
-    def test_ok_symlink(self, lab: LabPaths):
+    def test_ok_symlink(self, lab: LabPaths) -> None:
         src = lab.profile_root / "pkg" / "file.txt"
         src.parent.mkdir()
         src.touch()
@@ -145,13 +169,16 @@ class TestSymlinkStatus:
         assert self.setup_doctor(lab).get_symlink_status(src, tgt) == SymlinkStatus.OK
 
 
+# -------------------------
+# Package checks
+# -------------------------
 class TestPackageCheck:
-    def test_no_packages_warns(self, lab: LabPaths):
+    def test_no_packages_warns(self, lab: LabPaths) -> None:
         doctor = Doctor(lab.profile, lab.home, lab.dotfiles_dir, detail=False)
         checks = doctor.package_check()
         assert any("No packages" in c.message for c in checks)
 
-    def test_empty_package_warns(self, lab: LabPaths):
+    def test_empty_package_warns(self, lab: LabPaths) -> None:
         pkg = lab.profile_root / "pkg1"
         pkg.mkdir()
         doctor = Doctor(lab.profile, lab.home, lab.dotfiles_dir, detail=False)
@@ -159,8 +186,11 @@ class TestPackageCheck:
         assert any("empty" in c.message for c in checks)
 
 
+# -------------------------
+# Is-symlinked checks (higher-level)
+# -------------------------
 class TestIsSymlinked:
-    def test_no_packages_warns(self, tmp_path: Path):
+    def test_no_packages_warns(self, tmp_path: Path) -> None:
         home = tmp_path / "home"
         home.mkdir()
         dotfiles = tmp_path / "dotfiles"
@@ -170,7 +200,7 @@ class TestIsSymlinked:
         checks = doctor.is_symlinked()
         assert any("No packages" in c.message for c in checks)
 
-    def test_missing_target_warns(self, lab: LabPaths):
+    def test_missing_target_warns(self, lab: LabPaths) -> None:
         pkg = lab.profile_root / "pkg"
         pkg.mkdir()
         src = pkg / "file.txt"
@@ -179,7 +209,7 @@ class TestIsSymlinked:
         checks = doctor.is_symlinked()
         assert any("Missing target" in c.message for c in checks)
 
-    def test_broken_symlink_warns(self, lab: LabPaths):
+    def test_broken_symlink_warns(self, lab: LabPaths) -> None:
         pkg = lab.profile_root / "pkg"
         pkg.mkdir()
         src = pkg / "file.txt"
@@ -190,7 +220,7 @@ class TestIsSymlinked:
         checks = doctor.is_symlinked()
         assert any("Broken symlink" in c.message for c in checks)
 
-    def test_not_a_symlink_warns(self, lab: LabPaths):
+    def test_not_a_symlink_warns(self, lab: LabPaths) -> None:
         pkg = lab.profile_root / "pkg"
         pkg.mkdir()
         src = pkg / "file.txt"
@@ -201,7 +231,7 @@ class TestIsSymlinked:
         checks = doctor.is_symlinked()
         assert any("Expected symlink" in c.message for c in checks)
 
-    def test_wrong_source_warns(self, lab: LabPaths):
+    def test_wrong_source_warns(self, lab: LabPaths) -> None:
         pkg = lab.profile_root / "pkg"
         pkg.mkdir()
         src = pkg / "file.txt"
@@ -214,7 +244,7 @@ class TestIsSymlinked:
         checks = doctor.is_symlinked()
         assert any("Expected" in c.message and "points to" in c.message for c in checks)
 
-    def test_ok_with_detail(self, lab: LabPaths):
+    def test_ok_with_detail(self, lab: LabPaths) -> None:
         pkg = lab.profile_root / "pkg"
         pkg.mkdir()
         src = pkg / "file.txt"
@@ -227,7 +257,7 @@ class TestIsSymlinked:
             c.status == DoctorStatus.OK and "Link OK" in c.message for c in checks
         )
 
-    def test_all_ok_without_detail_returns_summary_ok(self, lab: LabPaths):
+    def test_all_ok_without_detail_returns_summary_ok(self, lab: LabPaths) -> None:
         pkg = lab.profile_root / "pkg"
         pkg.mkdir()
         src = pkg / "file.txt"
@@ -240,7 +270,7 @@ class TestIsSymlinked:
         assert checks[0].status == DoctorStatus.OK
         assert "All files in packages are properly symlinked" in checks[0].message
 
-    def test_is_symlinked_missing_parent_structure(self, tmp_path: Path):
+    def test_is_symlinked_missing_parent_structure(self, tmp_path: Path) -> None:
         home = tmp_path / "home"
         home.mkdir()
         dotfiles = tmp_path / "dotfiles"
@@ -260,8 +290,11 @@ class TestIsSymlinked:
         assert any("Missing parent structure" in c.message for c in checks)
 
 
+# -------------------------
+# Summary and run_all
+# -------------------------
 class TestSummaryAndRunAll:
-    def test_summary_counts(self, lab: LabPaths):
+    def test_summary_counts(self, lab: LabPaths) -> None:
         doctor = Doctor(lab.profile, lab.home, lab.dotfiles_dir, detail=False)
         checks = [
             DoctorCheck("c1", DoctorStatus.OK, ""),
@@ -271,7 +304,7 @@ class TestSummaryAndRunAll:
         report = doctor.summary(checks)
         assert report.ok == 1 and report.warn == 1 and report.error == 1
 
-    def test_run_all_includes_valid_dir_and_summary(self, lab: LabPaths):
+    def test_run_all_includes_valid_dir_and_summary(self, lab: LabPaths) -> None:
         pkg = lab.profile_root / "pkg1"
         pkg.mkdir()
         doctor = Doctor(lab.profile, lab.home, lab.dotfiles_dir, detail=False)

@@ -1,8 +1,12 @@
+# ruff: noqa: B008
+
 from pathlib import Path
 
 import typer
 
+from dotman.cli.common_func import handle_errors
 from dotman.core.config import load_config
+from dotman.core.validator import require_initialized, require_profile
 
 app = typer.Typer(help="A CLI tool to manage your dotfiles.", no_args_is_help=True)
 
@@ -10,6 +14,7 @@ app = typer.Typer(help="A CLI tool to manage your dotfiles.", no_args_is_help=Tr
 @app.command(
     help="Creates dotfile folder and if previous folder exists then makes it as backup then creates new dotfile folder."
 )
+@handle_errors
 def init():
     from dotman.cli.app.init import init  # noqa: PLC0415
 
@@ -17,6 +22,9 @@ def init():
 
 
 @app.command(help="Sync dotfiles package links to the home directory.")
+@handle_errors
+@require_initialized
+@require_profile
 def sync(
     package_name: str | None = typer.Option(
         None, "--package", help="Sync only this package. Syncs all packages by default."
@@ -31,6 +39,9 @@ def sync(
 
 
 @app.command(help="Give a full diagnostic report.")
+@handle_errors
+@require_initialized
+@require_profile
 def doctor(
     detail: bool = typer.Option(
         False, "-a", "--all", help="Show detailed information."
@@ -42,8 +53,11 @@ def doctor(
 
 
 @app.command(help="Add a file to a package.")
+@handle_errors
+@require_initialized
+@require_profile
 def add(
-    file: Path,
+    file: Path = typer.Argument(..., help="The file to be added."),
     package_name: str | None = typer.Option(
         None, "--package", help="The package name to which the file belongs."
     ),
@@ -51,6 +65,21 @@ def add(
     from dotman.cli.app.add import add  # noqa: PLC0415
 
     add(file=file, package_name=package_name)
+
+
+@app.command(help="Remove a file from a package.")
+@handle_errors
+@require_initialized
+@require_profile
+def remove(
+    file: Path | None = typer.Argument(
+        None,
+        help="The file to be removed.",
+    ),
+):
+    from dotman.cli.app.remove import remove  # noqa: PLC0415
+
+    remove(file=file)
 
 
 # ================================================================

@@ -1,19 +1,9 @@
 from pathlib import Path
 
-
-class DotmanInitializerError(Exception):
-    """Base class for all dotman initializer errors."""
-
-    def __init__(self, message: str):
-        self.message = message
-        super().__init__(self.message)
-
-    @property
-    def error(self) -> str:
-        return self.message
+from dotman.errors.dotman_error import DotmanError
 
 
-class DotmanDotfilesBackupDirExistsError(DotmanInitializerError):
+class DotmanDotfilesBackupDirExistsError(DotmanError):
     """Raised when the dotfiles backup directory already exists."""
 
     def __init__(self, dotfiles_dir: Path) -> None:
@@ -23,7 +13,7 @@ class DotmanDotfilesBackupDirExistsError(DotmanInitializerError):
         self.dotfiles_dir = dotfiles_dir
 
 
-class DotmanDotfilesDirError(DotmanInitializerError):
+class DotmanDotfilesDirError(DotmanError):
     """Raised when the dotfiles directory already exists."""
 
     def __init__(self, dotfiles_dir: Path) -> None:

@@ -1,31 +1,22 @@
-from enum import Enum
-from pathlib import Path
+from __future__ import annotations
 
-from dotman.cli.common_func import check_file_exists, sanitize_package_name
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+from dotman.cli.common_func import sanitize_package_name
 from dotman.cli.tree_builder import print_beautiful_directory
-from dotman.core.add import AddFiles, LogBook, SymlinkCheck
-from dotman.core.config import SUCCESSCODE, InternalFileSystemObject, load_config
-from dotman.core.get_internal_data import InternalData, InternalDataArguments
-from dotman.errors.custom_errors import (
-    FileDoesNotExistError,
-    FileNameCollidingError,
-    InvalidPackageNameError,
-    IsNotASubPathError,
-    SymlinkNotSupportedError,
-    TargetFileIsDotfilesDirError,
-    TargetFileIsHomeError,
-)
-from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
+from dotman.core.add import AddFiles, RollbackJournal, SymlinkCheck, SymlinkStatus
+from dotman.core.config import load_config
+from dotman.core.get_internal_data import InternalData, resolve_profile
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
-class AddErrors(Enum):
-    FileNotExists = FileDoesNotExistError
-    FileIsSymLink = SymlinkNotSupportedError
-    NotASubPath = IsNotASubPathError
-    InvalidPackage = InvalidPackageNameError
-    TargetIsHome = TargetFileIsHomeError
-    TargetIsDotfilesDir = TargetFileIsDotfilesDirError
-    FileNameCollidingError = FileNameCollidingError
+@dataclass(slots=True)
+class Preview:
+    warnings: list[str]
+    package_created: bool
 
 
 class AddService:
@@ -37,95 +28,62 @@ class AddService:
         dotfiles_dir: Path | None = None,
         profile: str | None = None,
     ) -> None:
-        self.file = file
-        self.package: str = sanitize_package_name(package)
-
         config = load_config()
         self.home_dir = home_dir or config.home_dir
         self.dotfiles_dir = dotfiles_dir or config.dotfiles_dir
-        self.profile = profile
 
-        self.logbook = LogBook()
+        self.journal = RollbackJournal()
         self.internal_data: InternalData = InternalData.load()
 
-    def load(self):
-        current_profile = self.internal_data.current_profile
+        self.file = file
+        self.package: str = sanitize_package_name(package)
 
-        if current_profile is None and self.profile is None:
-            raise ProfileMetaDataFileCorruptedError(
-                InternalDataArguments.CURRENT_PROFILE
-            )
-
-        chosen_profile = self.profile if self.profile is not None else current_profile
+        # will raise ProfileMetaDataFileCorruptedError if profile is not resolved
+        self.profile = resolve_profile(profile, self.internal_data)
 
         self.add_files = AddFiles(
             file=self.file,
             package=self.package,
-            profile_name=chosen_profile,  # type: ignore # Already checked for None
+            profile_name=self.profile,
             home_dir=self.home_dir,
             dotfiles_dir=self.dotfiles_dir,
-            logbook=self.logbook,
+            logbook=self.journal,
         )
 
-    def validate_directory_symlinks(self) -> list[SymlinkCheck]:
-        return self.add_files.validate_directory_symlinks()
+    def validate(self):
+        self.add_files.validate()
 
-    def create_reuse_package(self) -> bool:
-        """It will return True if package exist else it will create package and return False"""
-        if self.add_files.package_exists:
-            return True
-        self.add_files.create_package()
-        return False
+    def preview(self) -> Preview:
+        """Run validation and symlink checks, return a preview object."""
+        # NOTE: Will not create anything in preview
 
-    def service_validate(self) -> AddErrors | None:
-        try:
-            self.add_files.validate()
-        except FileDoesNotExistError:
-            return AddErrors.FileNotExists
-        except SymlinkNotSupportedError:
-            return AddErrors.FileIsSymLink
-        except IsNotASubPathError:
-            return AddErrors.NotASubPath
-        except InvalidPackageNameError:
-            return AddErrors.InvalidPackage
-        except TargetFileIsHomeError:
-            return AddErrors.TargetIsHome
-        except TargetFileIsDotfilesDirError:
-            return AddErrors.TargetIsDotfilesDir
-        except FileNameCollidingError:
-            return AddErrors.FileNameCollidingError
-        return None
+        self.add_files.validate()
+        symlink_checks: list[SymlinkCheck] = (
+            self.add_files.validate_directory_symlinks()
+        )
 
-    def service_add_file(self) -> SUCCESSCODE:
+        warnings = [
+            check.message
+            for check in symlink_checks
+            if check.status != SymlinkStatus.OK
+        ]
+
+        package_created = not self.add_files.package_exists
+
+        return Preview(warnings=warnings, package_created=package_created)
+
+    def add(self):
+        if not self.add_files.package_exists:
+            self.add_files.create_package()
         self.add_files.move_file_to_dotfiles()
-        return 1
 
-    @property
-    def is_dir(self) -> bool:
-        return self.add_files.is_dir
+    def commit(self) -> None:
+        """Perform the actual move and clear rollback journal."""
+        self.journal.clear()
 
-    @property
-    def package_exists(self):
-        return self.add_files.package_exists
+    def rollback_changes(self):
+        self.journal.rollback()
+        self.add_files.delete_empty_package()
 
-    def delete_log(self):
-        return self.logbook.clear_log()
-
-    def restore_files(self):
-        return self.logbook.restore_files()
-
-    def create_tree(self):
-        profile = self.profile or self.internal_data.current_profile
-        if profile is None:
-            raise ProfileMetaDataFileCorruptedError(
-                InternalDataArguments.CURRENT_PROFILE
-            )
-
-        return print_beautiful_directory(
-            self.logbook.log_file,
-            self.dotfiles_dir / InternalFileSystemObject.PROFILES.value / profile,
-        )
-
-    @property
-    def is_dotfile_home_exits(self):
-        return check_file_exists(self.home_dir, self.dotfiles_dir)
+    def tree(self):
+        return print_beautiful_directory(self.add_files.profile_root)

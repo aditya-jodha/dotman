@@ -2,6 +2,8 @@
 __pycache__/
 *.py[ocd]
 
+commit
+
 # Build & packaging
 build/
 dist/

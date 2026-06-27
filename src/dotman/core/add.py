@@ -1,14 +1,14 @@
-import tomllib
+import json
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
 from dotman.core.config import (
-    EXITCODE,
+    ExitCode,
     InternalFileSystemObject,
     StrPath,
+    get_temp_log_file,
     load_config,
-    make_temp_log_file,
 )
 from dotman.core.utils.fs import FileSystemUtil
 from dotman.errors.custom_errors import (
@@ -26,7 +26,6 @@ class SymlinkStatus(Enum):
     OK = "ok"
     WARN = "warn"
     ERROR = "error"
-    SKIP = "skip"
 
 
 @dataclass
@@ -36,49 +35,52 @@ class SymlinkCheck:
     message: str
 
 
-class LogBook:
-    """It will write a temp logs in form of toml of transfered files so user can easily
-    restore the files if something goes wrong."""
+class RollbackJournal:
+    """Rollback journal storing file operations in TOML for recovery."""
+
+    ORIGINAL_PATH = "original_path"
+    NEW_PATH = "new_path"
 
     def __init__(self, log_file: StrPath | None = None):
-        self.log_file = (
-            Path(log_file) if log_file else make_temp_log_file(load_config())
-        )
+        self.path = Path(log_file) if log_file else get_temp_log_file(load_config())
+        self.entries: list[dict[str, str]] = []
 
-    def clear_log(self):
+    def clear(self):
         """Clears the log file."""
-        if self.log_file.exists():
-            self.log_file.unlink()
+        if self.path.exists():
+            self.path.unlink()
 
-    def create_log(self):
-        """Creates the log file if it does not exist."""
-        if not self.log_file.exists():
-            self.log_file.touch()
-        else:
-            raise FileExistsError(f"Log file '{self.log_file}' already exists.")  # noqa: TRY003
-
-    def write_log(self, original_path: Path, new_path: Path):
-        log_entry = (
-            f'[[files]]\noriginal_path = "{original_path}"\nnew_path = "{new_path}"\n\n'
+    def add_entry(self, original: Path, new: Path) -> None:
+        self.entries.append(
+            {
+                self.ORIGINAL_PATH: str(original),
+                self.NEW_PATH: str(new),
+            }
         )
-        with self.log_file.open("a") as f:
-            f.write(log_entry)
 
-    def restore_files(self):
-        with self.log_file.open("rb") as f:
-            data = tomllib.load(f)
-        _data = data.get("files", [])
-        for entry in _data:
-            original_path = Path(entry["original_path"])
-            new_path = Path(entry["new_path"])
+    def save(self) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+
+        with self.path.open("w", encoding="utf-8") as f:
+            json.dump({"files": self.entries}, f, indent=2)
+
+    def rollback(self):
+        with self.path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        # Reverse the entries to restore the files in reverse order (Not matters today)
+        for entry in reversed(data.get("files", [])):
+            original_path = Path(entry[self.ORIGINAL_PATH])
+            new_path = Path(entry[self.NEW_PATH])
+
             if new_path.exists():
                 new_path.rename(original_path)
-        self.clear_log()
+        self.clear()
 
 
 class AddFiles:
     """Class to handle adding files to the dotfiles directory.\n
-    NOTE: PACKAGE SHOULD NOT BE NAME AS THE INTERNAL DOTMAN DIRECTORY i.e. `packages`"""
+    NOTE: PACKAGE SHOULD NOT BE NAME AS THE INTERNAL dotman DIRECTORY i.e. `packages`"""
 
     def __init__(
         self,
@@ -87,13 +89,15 @@ class AddFiles:
         dotfiles_dir: Path,
         file: Path,
         package: str,
-        logbook: LogBook,
+        logbook: RollbackJournal,
     ):
         self.profile_name = profile_name
         self.home_dir = home_dir.resolve()
         self.dotfiles_dir = dotfiles_dir.resolve()
-        self.file = file.resolve(strict=False)
-        self.original_file = file
+
+        self.input_file = file.expanduser()
+        self.file = FileSystemUtil.normalize_path(file)
+
         self.package = package  # Assumed that @src/dotman/core/service/add_service.py sanitizes the package name
         self.log_book = logbook
 
@@ -108,19 +112,25 @@ class AddFiles:
         return (self.profile_root / self.package).exists()
 
     @property
-    def profile_root(self):
+    def profile_root(self) -> Path:
         return (
             self.dotfiles_dir
             / InternalFileSystemObject.PROFILES.value
             / self.profile_name
         )
 
-    def is_file_in_package(self):
+    @property
+    def is_file_in_package(self) -> bool:
         """Check name collision."""
         return self.destination.exists() or self.destination.is_symlink()
 
+    @property
+    def destination(self) -> Path:
+        rel_path = self.file.relative_to(self.home_dir)
+        return self.profile_root / self.package / rel_path
+
     def validate(self) -> None:
-        """This validates all the senario, and make destination class instance."""
+        """This validates all the scenario, and make destination class instance."""
         # Order matters for user to get a reasonable answer.
         # NOTE: whenever new error added here, need to update the service_add.py file as well.
         if self.file == self.home_dir:
@@ -128,7 +138,7 @@ class AddFiles:
         if self.file == self.dotfiles_dir:
             raise TargetFileIsDotfilesDirError(self.file)
 
-        if self.original_file.is_symlink():
+        if self.input_file.is_symlink():
             raise SymlinkNotSupportedError()
 
         if not self.file.exists():
@@ -138,50 +148,37 @@ class AddFiles:
             raise IsNotASubPathError(self.home_dir)
 
         if self.package == "":
-            raise InvalidPackageNameError(self.package.__str__(), False)
+            raise InvalidPackageNameError(self.package, False)
 
-        if str(self.package) in InternalFileSystemObject.values():
-            raise InvalidPackageNameError(self.package.__str__(), True)
+        if self.package in InternalFileSystemObject.values():
+            raise InvalidPackageNameError(self.package, True)
 
-        rel_path = self.file.relative_to(self.home_dir)
-        self.destination = self.profile_root / self.package / rel_path
-
-        if self.is_file_in_package():
+        if self.is_file_in_package:
             raise FileNameCollidingError(self.file)
 
     def create_package(self):
         """Creates the directory inside dotfiles"""
         pkg_to_create = self.profile_root / self.package
-        pkg_to_create.mkdir(parents=True, exist_ok=False)
+        pkg_to_create.mkdir(parents=True)
 
-    def delete_empty_package(self) -> EXITCODE:
+    def delete_empty_package(self) -> ExitCode:
         """Deletes empty package in the dotfiles directory."""
-        current = self.destination.parent
+        return FileSystemUtil.delete_empty_package(self.profile_root, self.destination)
 
-        while current != self.dotfiles_dir:
-            if next(current.iterdir(), None) is not None:
-                # If there are any directories/files in the current path, we will not delete the package
-                break
-
-            current.rmdir()
-            current = current.parent
-        else:
-            return 0
-        return 1
-
-    def move_file_to_dotfiles(self) -> EXITCODE:
+    def move_file_to_dotfiles(self) -> ExitCode:
         """Moves the specified file to the dotfiles directory.
         by creating a dir into dotfiles named as package"""
 
         # Writes log for backup
-        self.log_book.write_log(self.file, self.destination)
+        self.log_book.add_entry(self.file, self.destination)
+        self.log_book.save()
 
         # Ensure the parent directory of the destination exists before moving the file
         self.destination.parent.mkdir(parents=True, exist_ok=True)
 
         # Move the file to the destination
         self.file.rename(self.destination)
-        return 0
+        return ExitCode.SUCCESS
 
     def file_exists_in_package(self) -> bool:
         """Checks if the file exists in the package directory."""

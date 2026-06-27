@@ -4,6 +4,7 @@ import typer
 import yaml
 from rich.console import Console
 
+from dotman.cli.common_func import handle_errors
 from dotman.core.config import DotmanConfig, load_config, save_config
 
 config_app = typer.Typer(help="Manage items in the system")
@@ -17,6 +18,7 @@ console = Console()
 
 
 @config_app.callback(invoke_without_command=True)
+@handle_errors
 def config_callback(ctx: typer.Context):
     """Config CLI Application."""
     if ctx.invoked_subcommand is None:
@@ -28,12 +30,9 @@ def config_callback(ctx: typer.Context):
 
 
 @config_app.command(help="View dotman configuration.")
+@handle_errors
 def show():
     console.print(yaml.dump(load_config().as_dict(), default_flow_style=False))
-    console.print(
-        "You can change your config file path via `CONFIG_ENV_VAR environment` variable.",
-        "Default is `~/.config/dotman/config.yml`",
-    )
 
 
 @config_app.command(help="Get a configuration value.")
@@ -46,6 +45,7 @@ def get(key: str):
 
 
 @config_app.command(help="Update dotman configuration.")
+@handle_errors
 def set(
     key: str | None = typer.Argument(None, help="The key to update."),
     value: str | None = typer.Argument(None, help="The value to update the key with."),
