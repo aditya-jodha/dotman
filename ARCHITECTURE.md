@@ -47,7 +47,6 @@ Dotman is divided into three layers
     core --> profile
     core --> internal
     core --> config
-
 ```
 
 - Service layer: (works as a Orchestration layer)
@@ -62,61 +61,61 @@ Dotman is divided into three layers
   | `initializer_service.py`| Connects CLI init command → core `config.py`                    |
 
 ```mermaid
+    %%{init: {'theme': 'base', 'themeVariables': { 'background': '#0d1117', 'primaryTextColor': '#fff', 'lineColor': '#8b949e' }}}%%
     flowchart LR
-    %% Styling Definitions
-    classDef cliNode fill:#2b3a4a,stroke:#3a4f66,stroke-width:2px,color:#fff;
-    classDef serviceNode fill:#1e4620,stroke:#2d6630,stroke-width:2px,color:#fff;
-    classDef coreNode fill:#4a2840,stroke:#663859,stroke-width:2px,color:#fff;
-    classDef stdLib fill:#444,stroke:#666,stroke-width:2px,color:#fff;
+        %% Styling Definitions
+        classDef cliNode fill:#23303e,stroke:#388bfd,stroke-width:2px,color:#fff;
+        classDef serviceNode fill:#1f2421,stroke:#2ea043,stroke-width:2px,color:#fff;
+        classDef coreNode fill:#3c2234,stroke:#d359ac,stroke-width:2px,color:#fff;
+        classDef stdLib fill:#21262d,stroke:#30363d,stroke-width:2px,color:#fff;
 
-    %% 1. CLI Layer (User Entry Point)
-    subgraph CLI_Zone ["💻 CLI Commands (Entry Point)"]
-        CLI_Doctor(doctor)
-        CLI_Profile(profile)
-        CLI_Add(add)
-        CLI_Remove(remove)
-        CLI_Sync(sync)
-        CLI_Init(init)
-    end
-    class CLI_Doctor,CLI_Profile,CLI_Add,CLI_Remove,CLI_Sync,CLI_Init cliNode;
+        %% Subgraph Styling
+        style CLI_Zone fill:#161b22,stroke:#30363d,stroke-width:1px,color:#c9d1d9;
+        style Service_Zone fill:#161b22,stroke:#30363d,stroke-width:1px,color:#c9d1d9;
+        style Core_Zone fill:#161b22,stroke:#30363d,stroke-width:1px,color:#c9d1d9;
 
-    %% 2. Service Layer (Orchestration Engine)
-    subgraph Service_Zone ["⚙️ Service Layer (Orchestrator)"]
-        doctor_srv(doctor_service.py)
-        profile_srv(profile_service.py)
-        add_srv(add_service.py)
-        remove_srv(remove_service.py)
-        sync_srv(sync_service.py)
-        init_srv(initializer_service.py)
-    end
-    class doctor_srv,profile_srv,add_srv,remove_srv,sync_srv,init_srv serviceNode;
+        %% 1. CLI Layer (User Entry Point)
+        subgraph CLI_Zone ["💻 CLI Commands (Entry Point)"]
+            CLI_Doctor(doctor)
+            CLI_Profile(profile)
+            CLI_Add(add)
+            CLI_Remove(remove)
+            CLI_Sync(sync)
+            CLI_Init(init)
+        end
+        class CLI_Doctor,CLI_Profile,CLI_Add,CLI_Remove,CLI_Sync,CLI_Init cliNode;
 
-    %% 3. Core & Dependencies Layer (Execution Targets)
-    subgraph Core_Zone ["📦 Core & Standard Lib (Execution)"]
-        doctor_core(doctor.py)
-        profile_core(profile.py)
-        linker_core(linker.py)
-        add_core(add.py)
-        config_core(config.py)
-        pathlib_std[pathlib.Path]
-    end
-    class doctor_core,profile_core,linker_core,add_core,config_core coreNode;
-    class pathlib_std stdLib;
+        %% 2. Service Layer (Orchestration Engine)
+        subgraph Service_Zone ["⚙️ Service Layer (Orchestrator)"]
+            doctor_srv(doctor_service.py)
+            profile_srv(profile_service.py)
+            add_srv(add_service.py)
+            remove_srv(remove_service.py)
+            sync_srv(sync_service.py)
+            init_srv(initializer_service.py)
+        end
+        class doctor_srv,profile_srv,add_srv,remove_srv,sync_srv,init_srv serviceNode;
 
-    %% --- Corrected Connection Flow ---
-    %% CLI triggers the Orchestrator, which delegates to Core
-    CLI_Doctor  -->|routes to| doctor_srv  -->|executes| doctor_core
-    
-    CLI_Profile -->|routes to| profile_srv -->|executes| profile_core
-    profile_srv -->|resolves| linker_core
-    
-    CLI_Add     -->|routes to| add_srv     -->|executes| add_core
-    
-    CLI_Remove  -->|routes to| remove_srv  -->|calls| pathlib_std
-    
-    CLI_Sync    -->|routes to| sync_srv    -->|executes| linker_core
-    
-    CLI_Init    -->|routes to| init_srv    -->|updates| config_core
+        %% 3. Core & Dependencies Layer (Execution Targets)
+        subgraph Core_Zone ["📦 Core & Standard Lib (Execution)"]
+            doctor_core(doctor.py)
+            profile_core(profile.py)
+            linker_core(linker.py)
+            add_core(add.py)
+            config_core(config.py)
+            pathlib_std[pathlib.Path]
+        end
+        class doctor_core,profile_core,linker_core,add_core,config_core coreNode;
+        class pathlib_std stdLib;
+
+        %% --- Corrected Connection Flow ---
+        CLI_Doctor  -->|routes to| doctor_srv  -->|executes| doctor_core
+        CLI_Profile -->|routes to| profile_srv -->|executes| profile_core
+        profile_srv -->|resolves| linker_core
+        CLI_Add     -->|routes to| add_srv     -->|executes| add_core
+        CLI_Remove  -->|routes to| remove_srv  -->|calls| pathlib_std
+        CLI_Sync    -->|routes to| sync_srv    -->|executes| linker_core
+        CLI_Init    -->|routes to| init_srv    -->|updates| config_core
 
 ```
 
@@ -193,8 +192,8 @@ Dotman is divided into three layers
 
 ```
 
-    > Note:
-    <br>
-    > - Config command is not shown in the diagram.
-    <br>
-    > - Some basic things like calling std lib like pathlib typer and some inbuild modules like calling config is not shown in the diagram.
+> [!NOTE]
+>
+> - Config command is not shown in the diagram.
+>
+> - Some basic things like calling std lib like pathlib typer and some inbuild modules like calling config is not shown in the diagram.
