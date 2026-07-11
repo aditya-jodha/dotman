@@ -7,14 +7,12 @@ import yaml
 from dotman.core import config
 
 
-def test_user_defined_values():
-    vals = config.UserDefinedConfig.values()
-    assert "dotfiles_dir" in vals
-    assert "home_dir" in vals
-
-
 def test_dotmanconfig_as_dict(tmp_path: Path):
-    cfg = config.DotmanConfig(dotfiles_dir=tmp_path / "dot", home_dir=tmp_path / "home")
+    dir_ = tmp_path / "dot"
+    dir_.mkdir()
+    home = tmp_path / "home"
+    home.mkdir()
+    cfg = config.DotmanConfig(dotfiles_dir=dir_, home_dir=home)
     d = cfg.as_dict()
     assert d["dotfiles_dir"].endswith("dot")
     assert d["home_dir"].endswith("home")
@@ -66,6 +64,8 @@ def test_load_config_reads_valid_file(tmp_path: Path):
         {"dotfiles_dir": str(tmp_path / "dot"), "home_dir": str(tmp_path / "home")},
         path.open("w"),
     )
+    (tmp_path / "dot").mkdir()
+    (tmp_path / "home").mkdir()
     cfg = config.load_config(path)
     assert cfg.dotfiles_dir == (tmp_path / "dot")
     assert cfg.home_dir == (tmp_path / "home")
@@ -73,6 +73,8 @@ def test_load_config_reads_valid_file(tmp_path: Path):
 
 def test_save_config_writes_yaml(tmp_path: Path):
     path = tmp_path / "out.yml"
+    (tmp_path / "dot").mkdir()
+    (tmp_path / "home").mkdir()
     cfg = config.DotmanConfig(dotfiles_dir=tmp_path / "dot", home_dir=tmp_path / "home")
     config.save_config(cfg, path)
     data = yaml.safe_load(path.read_text())

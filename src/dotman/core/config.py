@@ -6,6 +6,7 @@ from typing import Literal
 from uuid import uuid4
 
 import yaml
+from pydantic import BaseModel, ConfigDict, DirectoryPath, field_validator
 
 type SUCCESSOR = Literal[0, 1]
 type StrPath = str | Path
@@ -19,27 +20,32 @@ DEFAULT_CONFIG_PATH = Path.home() / ".config/dotman/config.yml"
 CONFIG_ENV_VAR = "DOTMAN_CONFIG"
 
 
-class UserDefinedConfig(Enum):
-    """Configuration keys that may be overridden by the user."""
+# class UserDefinedConfig(Enum):
+#     """Configuration keys that may be overridden by the user."""
 
-    DOTFILES_DIR = "dotfiles_dir"
-    HOME_DIR = "home_dir"
+#     DOTFILES_DIR = "dotfiles_dir"
+#     HOME_DIR = "home_dir"
 
-    @classmethod
-    def values(cls) -> set[str]:
-        return {item.value for item in cls}
+#     @classmethod
+#     def values(cls) -> set[str]:
+#         return {item.value for item in cls}
 
 
-@dataclass(frozen=True, slots=True)
-class DotmanConfig:
+class DotmanConfig(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+
     dotfiles_dir: Path
-    home_dir: Path
+    home_dir: DirectoryPath
+
+    @field_validator("dotfiles_dir", "home_dir", mode="before")
+    @classmethod
+    def expand_path(cls, value: StrPath) -> Path:
+        return Path(value).expanduser()
 
     def as_dict(self) -> dict[str, str]:
-        return {
-            "dotfiles_dir": str(self.dotfiles_dir),
-            "home_dir": str(self.home_dir),
-        }
+        return self.model_dump(mode="json")
 
 
 class InternalFileSystemObject(Enum):
@@ -89,15 +95,7 @@ def load_config(path: Path | None = None) -> DotmanConfig:
     with config_path.open("r", encoding="utf-8") as f:
         data: dict[str, str] = yaml.safe_load(f) or {}
 
-    # SAFE validation (important)
-    for key in UserDefinedConfig.values():
-        if key not in data:
-            raise ValueError(f"Missing config key: {key}")  # noqa: TRY003
-
-    return DotmanConfig(
-        dotfiles_dir=Path(data[UserDefinedConfig.DOTFILES_DIR.value]).expanduser(),
-        home_dir=Path(data[UserDefinedConfig.HOME_DIR.value]).expanduser(),
-    )
+    return DotmanConfig.model_validate(data)
 
 
 def save_config(cfg: DotmanConfig, path: Path | None = None) -> None:
@@ -107,4 +105,4 @@ def save_config(cfg: DotmanConfig, path: Path | None = None) -> None:
     config_path.parent.mkdir(parents=True, exist_ok=True)
 
     with config_path.open("w", encoding="utf-8") as f:
-        yaml.safe_dump(cfg.as_dict(), f)
+        yaml.safe_dump(cfg.model_dump(mode="json"), f)
