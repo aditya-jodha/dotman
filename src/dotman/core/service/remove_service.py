@@ -2,11 +2,15 @@ from __future__ import annotations
 
 from enum import Enum, auto
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from dotman.core.config import ExitCode, InternalFileSystemObject, StrPath, load_config
+from dotman.core.config import InternalFileSystemObject, StrPath, load_config
 from dotman.core.get_internal_data import InternalData, InternalDataArguments
 from dotman.core.utils.fs import FileSystemUtil
 from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
+
+if TYPE_CHECKING:
+    from dotman.errors.dotman_error import ExitCode
 
 
 class RemoveStatus(Enum):
@@ -91,17 +95,11 @@ class RemoveService:
         current_profile = InternalData.load().current_profile
 
         if current_profile is None:
-            raise ProfileMetaDataFileCorruptedError(
-                InternalDataArguments.CURRENT_PROFILE
-            )
+            raise ProfileMetaDataFileCorruptedError(InternalDataArguments.CURRENT_PROFILE)
 
-        profile: Path = (
-            dotfiles_dir / InternalFileSystemObject.PROFILES.value / current_profile
-        )
+        profile: Path = dotfiles_dir / InternalFileSystemObject.PROFILES.value / current_profile
         if not profile.exists():
-            raise ProfileMetaDataFileCorruptedError(
-                InternalDataArguments.CURRENT_PROFILE, False
-            )
+            raise ProfileMetaDataFileCorruptedError(InternalDataArguments.CURRENT_PROFILE, False)
 
         return profile
 

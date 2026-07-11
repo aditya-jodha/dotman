@@ -58,15 +58,9 @@ class AddService:
         # NOTE: Will not create anything in preview
 
         self.add_files.validate()
-        symlink_checks: list[SymlinkCheck] = (
-            self.add_files.validate_directory_symlinks()
-        )
+        symlink_checks: list[SymlinkCheck] = self.add_files.validate_directory_symlinks()
 
-        warnings = [
-            check.message
-            for check in symlink_checks
-            if check.status != SymlinkStatus.OK
-        ]
+        warnings = [check.message for check in symlink_checks if check.status != SymlinkStatus.OK]
 
         package_created = not self.add_files.package_exists
 

@@ -106,9 +106,7 @@ class TestProfileManager:
 
         manager.create_profile("personal")
 
-        assert (
-            lab.dotfiles_dir / InternalFileSystemObject.PROFILES.value / "personal"
-        ).exists()
+        assert (lab.dotfiles_dir / InternalFileSystemObject.PROFILES.value / "personal").exists()
 
     def test_create_profile_duplicate(self, lab: LabPaths):
         manager = ProfileManager(lab.dotfiles_dir)
@@ -198,9 +196,7 @@ class TestProfileScanner:
         manager = ProfileManager(lab.dotfiles_dir)
         manager.create_profile("personal")
 
-        file = (
-            manager.profile_path("personal") / "nvim" / ".config" / "nvim" / "init.lua"
-        )
+        file = manager.profile_path("personal") / "nvim" / ".config" / "nvim" / "init.lua"
 
         file.parent.mkdir(parents=True)
         file.write_text("hello")

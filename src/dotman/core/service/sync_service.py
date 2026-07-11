@@ -27,9 +27,7 @@ class SyncService:
             self.packages: list[Path] = sorted(
                 path
                 for path in (
-                    self.dotfiles_dir
-                    / InternalFileSystemObject.PROFILES.value
-                    / self.profile
+                    self.dotfiles_dir / InternalFileSystemObject.PROFILES.value / self.profile
                 ).iterdir()
                 if path.is_dir()
             )
@@ -38,10 +36,7 @@ class SyncService:
             return
 
         package_dir = (
-            self.dotfiles_dir
-            / InternalFileSystemObject.PROFILES.value
-            / self.profile
-            / package
+            self.dotfiles_dir / InternalFileSystemObject.PROFILES.value / self.profile / package
         )
         if not package_dir.exists() or not package_dir.is_dir():
             raise InvalidPackageNameError(package=package, is_internal_package=False)

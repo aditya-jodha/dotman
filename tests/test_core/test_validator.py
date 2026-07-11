@@ -146,9 +146,7 @@ def test_require_initialized_decorator_calls_validator(monkeypatch: MonkeyPatch)
     def fake_validate(self):
         called["count"] += 1
 
-    monkeypatch.setattr(
-        validator.DotmanValidator, "validate_initialized", fake_validate
-    )
+    monkeypatch.setattr(validator.DotmanValidator, "validate_initialized", fake_validate)
 
     @validator.require_initialized
     def target(a, b=1):
@@ -162,9 +160,7 @@ def test_require_initialized_decorator_calls_validator(monkeypatch: MonkeyPatch)
     def raise_validate(self):
         raise DotmanNotInitializedError()
 
-    monkeypatch.setattr(
-        validator.DotmanValidator, "validate_initialized", raise_validate
-    )
+    monkeypatch.setattr(validator.DotmanValidator, "validate_initialized", raise_validate)
 
     executed = {"ran": False}
 
@@ -198,9 +194,7 @@ def test_require_profile_decorator_calls_validator(monkeypatch: MonkeyPatch):
     def raise_ensure(self):
         raise DotmanProfileNotInitializedError()
 
-    monkeypatch.setattr(
-        validator.DotmanValidator, "ensure_profile_exists", raise_ensure
-    )
+    monkeypatch.setattr(validator.DotmanValidator, "ensure_profile_exists", raise_ensure)
 
     executed = {"ran": False}
 

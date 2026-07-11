@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING
 import typer
 from rich.console import Console
 
-from dotman.core.config import ExitCode
 from dotman.core.service.sync_service import SyncService
+from dotman.errors.dotman_error import ExitCode
 
 if TYPE_CHECKING:
     from dotman.core.linker import LinkResult

@@ -1,21 +1,11 @@
 import os
 from dataclasses import dataclass
-from enum import Enum, IntEnum
+from enum import Enum
 from pathlib import Path
 from typing import Literal
 from uuid import uuid4
 
 import yaml
-
-
-class ExitCode(IntEnum):
-    SUCCESS = 0
-    INVALID_ARGUMENTS = 1
-    NETWORK_ERROR = 2
-    DATABASE_FAILURE = 3
-    KEYBOARD_INTERRUPT = 4
-    DOTFILES_FAILURE = 5
-
 
 type SUCCESSOR = Literal[0, 1]
 type StrPath = str | Path
@@ -40,7 +30,7 @@ class UserDefinedConfig(Enum):
         return {item.value for item in cls}
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class DotmanConfig:
     dotfiles_dir: Path
     home_dir: Path

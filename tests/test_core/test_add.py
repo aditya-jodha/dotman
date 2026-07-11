@@ -9,7 +9,7 @@ import pytest
 from pytest import MonkeyPatch
 
 from dotman.core.add import AddFiles, SymlinkStatus
-from dotman.core.config import ExitCode, InternalFileSystemObject
+from dotman.core.config import InternalFileSystemObject
 from dotman.errors.custom_errors import (
     FileDoesNotExistError,
     FileNameCollidingError,
@@ -19,6 +19,7 @@ from dotman.errors.custom_errors import (
     TargetFileIsDotfilesDirError,
     TargetFileIsHomeError,
 )
+from dotman.errors.dotman_error import ExitCode
 
 # ============================================================
 # Helpers
@@ -75,9 +76,7 @@ def test_package_exists_property(tmp_path: Path):
 def test_profile_root_property(tmp_path: Path):
     addfiles = setup_addfiles(tmp_path)
     expected = (
-        addfiles.dotfiles_dir
-        / InternalFileSystemObject.PROFILES.value
-        / addfiles.profile_name
+        addfiles.dotfiles_dir / InternalFileSystemObject.PROFILES.value / addfiles.profile_name
     )
     assert addfiles.profile_root == expected
 
@@ -266,13 +265,10 @@ def test_broken_symlink(tmp_path: Path):
 
     addfiles.file = dir_path
     checks = addfiles.validate_directory_symlinks()
-    assert any(
-        c.status == SymlinkStatus.ERROR and "broken symlink" in c.message
-        for c in checks
-    )
+    assert any(c.status == SymlinkStatus.ERROR and "broken symlink" in c.message for c in checks)
 
 
-def test_symlink_loop_runtimeerror(tmp_path, monkeypatch):
+def test_symlink_loop_runtime_error(tmp_path, monkeypatch):
     addfiles = setup_addfiles(tmp_path)
     dir_path = addfiles.home_dir / "dir"
     dir_path.mkdir()
@@ -329,10 +325,7 @@ def test_symlink_points_outside_root(tmp_path: Path):
 
     addfiles.file = dir_path
     checks = addfiles.validate_directory_symlinks()
-    assert any(
-        c.status == SymlinkStatus.ERROR and "points outside" in c.message
-        for c in checks
-    )
+    assert any(c.status == SymlinkStatus.ERROR and "points outside" in c.message for c in checks)
 
 
 def test_symlink_points_inside_root(tmp_path: Path):
@@ -346,6 +339,4 @@ def test_symlink_points_inside_root(tmp_path: Path):
 
     addfiles.file = dir_path
     checks = addfiles.validate_directory_symlinks()
-    assert any(
-        c.status == SymlinkStatus.OK and "points inside" in c.message for c in checks
-    )
+    assert any(c.status == SymlinkStatus.OK and "points inside" in c.message for c in checks)

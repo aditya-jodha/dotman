@@ -4,7 +4,6 @@ from enum import Enum
 from pathlib import Path
 
 from dotman.core.config import (
-    ExitCode,
     InternalFileSystemObject,
     StrPath,
     get_temp_log_file,
@@ -20,6 +19,7 @@ from dotman.errors.custom_errors import (
     TargetFileIsDotfilesDirError,
     TargetFileIsHomeError,
 )
+from dotman.errors.dotman_error import ExitCode
 
 
 class SymlinkStatus(Enum):
@@ -98,7 +98,7 @@ class AddFiles:
         self.input_file = file.expanduser()
         self.file = FileSystemUtil.normalize_path(file)
 
-        self.package = package  # Assumed that @src/dotman/core/service/add_service.py sanitizes the package name
+        self.package = package  # Package name is already sanitized by AddService.
         self.log_book = logbook
 
     @property
@@ -113,11 +113,7 @@ class AddFiles:
 
     @property
     def profile_root(self) -> Path:
-        return (
-            self.dotfiles_dir
-            / InternalFileSystemObject.PROFILES.value
-            / self.profile_name
-        )
+        return self.dotfiles_dir / InternalFileSystemObject.PROFILES.value / self.profile_name
 
     @property
     def is_file_in_package(self) -> bool:
@@ -182,15 +178,11 @@ class AddFiles:
 
     def file_exists_in_package(self) -> bool:
         """Checks if the file exists in the package directory."""
-        return (
-            self.profile_root / self.package / self.file.relative_to(self.home_dir)
-        ).exists()
+        return (self.profile_root / self.package / self.file.relative_to(self.home_dir)).exists()
 
     def has_files_in_package(self, pkg: str | None = None) -> bool:
         """Checks is any file exists in the package directory."""
-        path = (
-            Path(self.profile_root / pkg) if pkg else (self.profile_root / self.package)
-        )
+        path = Path(self.profile_root / pkg) if pkg else (self.profile_root / self.package)
 
         # Returns True if at least one item inside is a regular file
         return FileSystemUtil()(path)
@@ -229,9 +221,7 @@ class AddFiles:
                 )
             else:
                 checks.append(
-                    SymlinkCheck(
-                        path, SymlinkStatus.OK, f"points inside added path: {target}"
-                    )
+                    SymlinkCheck(path, SymlinkStatus.OK, f"points inside added path: {target}")
                 )
 
         return checks

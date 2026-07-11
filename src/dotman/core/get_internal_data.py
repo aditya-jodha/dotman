@@ -36,9 +36,7 @@ def resolve_profile(explicit_profile: str | None, internal_data: InternalData) -
         return internal_data.current_profile
 
     # If we reach here, both are None → corrupted metadata
-    raise ProfileMetaDataFileCorruptedError(
-        InternalDataArguments.CURRENT_PROFILE, False
-    )
+    raise ProfileMetaDataFileCorruptedError(InternalDataArguments.CURRENT_PROFILE, False)
 
 
 @dataclass
@@ -50,9 +48,7 @@ class InternalData:
     def load(cls, file_path: Path | None = None) -> InternalData:
         """Load the metadata file."""
         if file_path is None:
-            file_path = (
-                load_config().dotfiles_dir / InternalFileSystemObject.METADATA.value
-            )
+            file_path = load_config().dotfiles_dir / InternalFileSystemObject.METADATA.value
 
         data: dict[str, str] = {}
         if not file_path.exists():
@@ -78,9 +74,7 @@ class InternalData:
             exist_ok=True,
         )
         with self.file_path.open("w", encoding="utf-8") as f:
-            yaml.safe_dump(
-                {InternalDataArguments.CURRENT_PROFILE.value: self.current_profile}, f
-            )
+            yaml.safe_dump({InternalDataArguments.CURRENT_PROFILE.value: self.current_profile}, f)
 
     def write(self, profile: str) -> None:
         """Write a new profile to the metadata file."""

@@ -57,9 +57,7 @@ def test_load_reads_existing_metadata(tmp_path: Path, monkeypatch: MonkeyPatch):
     meta = dotfiles / InternalFileSystemObject.METADATA.value
     meta.parent.mkdir(parents=True)
     # write YAML with current_profile
-    yaml.safe_dump(
-        {"current_profile": "saved_profile"}, meta.open("w", encoding="utf-8")
-    )
+    yaml.safe_dump({"current_profile": "saved_profile"}, meta.open("w", encoding="utf-8"))
     monkeypatch.setattr(gid, "load_config", lambda: make_config(dotfiles))
 
     internal = gid.InternalData.load(None)

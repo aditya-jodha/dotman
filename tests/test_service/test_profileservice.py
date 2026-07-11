@@ -57,9 +57,7 @@ class FakeUnlinker:
 
 
 class FakeLinker:
-    def __init__(
-        self, home_dir: Path | None = None, backup_dir: Path | None = None
-    ) -> None:
+    def __init__(self, home_dir: Path | None = None, backup_dir: Path | None = None) -> None:
         self.home_dir = home_dir
         self.backup_dir = backup_dir
         self.called_with: dict[str, Any] | None = None

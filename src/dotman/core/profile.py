@@ -26,9 +26,7 @@ class ProfileState:
 class ProfileManager:
     def __init__(self, dotfiles_dir: Path):
         self.dotfiles_dir: Path = dotfiles_dir
-        self.profiles_dir: Path = (
-            self.dotfiles_dir / InternalFileSystemObject.PROFILES.value
-        )
+        self.profiles_dir: Path = self.dotfiles_dir / InternalFileSystemObject.PROFILES.value
 
     def create_profile(self, name: str | None = None):
         if name is None:
@@ -46,18 +44,12 @@ class ProfileManager:
         (self.profiles_dir / name).rmdir()
 
     def list_profiles(self) -> list[str]:
-        return [
-            profile.name for profile in self.profiles_dir.iterdir() if profile.is_dir()
-        ]
+        return [profile.name for profile in self.profiles_dir.iterdir() if profile.is_dir()]
 
     def list_profile_packages(self, name: str) -> list[str]:
         if not self.profile_exists(name):
             raise ProfileNotFoundError(name)
-        return [
-            package.name
-            for package in self.profile_path(name).iterdir()
-            if package.is_dir()
-        ]
+        return [package.name for package in self.profile_path(name).iterdir() if package.is_dir()]
 
     def profile_exists(self, name: str) -> bool:
         return self.profile_path(name).exists()

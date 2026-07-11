@@ -49,6 +49,9 @@ select = [
     "S", "SIM", "TC", "TID", "TRY", "UP", "W", "YTT"
 ]
 
+[tool.ruff.format]
+docstring-code-format = true
+
 [tool.ruff.lint.pycodestyle]
 # Avoids triggering E501 on task comments (like TODO, FIXME)
 ignore-overlong-task-comments = true

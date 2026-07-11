@@ -25,7 +25,7 @@
     "ruff.format.preview": true,
     "ruff.lint.select": ["E","W","F","B","UP","FA","C4","SIM","RET","I","TID","TC","ARG","PTH","N","PD","NPY","PERF","DTZ","YTT","RUF","TRY","BLE","S","PLE","PLC","FURB"],
     "ruff.exclude": [".venv", "venv", "__pycache__", "node_modules", "typings", "build", "dist"],
-    "ruff.lineLength": 120,
+    "ruff.lineLength": 100,
     "python.analysis.typeCheckingMode": "strict",
     "python.analysis.autoImportCompletions": true,
     "python.analysis.diagnosticSeverityOverrides": {

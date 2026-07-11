@@ -53,9 +53,7 @@ class DoctorCheck:
 
 
 class Doctor:
-    def __init__(
-        self, profile_name: str, home_dir: Path, dotfile_dir: Path, detail: bool
-    ) -> None:
+    def __init__(self, profile_name: str, home_dir: Path, dotfile_dir: Path, detail: bool) -> None:
         self.home_dir = home_dir
         self.profile_name = profile_name
         self.dotfiles_dir = dotfile_dir
@@ -67,9 +65,7 @@ class Doctor:
             self.packages = [
                 p
                 for p in (
-                    self.dotfiles_dir
-                    / InternalFileSystemObject.PROFILES.value
-                    / self.profile_name
+                    self.dotfiles_dir / InternalFileSystemObject.PROFILES.value / self.profile_name
                 ).iterdir()
                 if p.is_dir()
             ]
@@ -169,7 +165,10 @@ class Doctor:
                             DoctorCheck(
                                 name=f"{pkg.name}:{source.relative_to(pkg)}",
                                 status=DoctorStatus.ERROR,
-                                message=f"Missing parent structure: Environment lacks directory '{target.parent}'.",
+                                message=(
+                                    "Missing parent structure: "
+                                    f"Environment lacks directory '{target.parent}'."
+                                ),
                             )
                         )
                         continue
@@ -206,7 +205,8 @@ class Doctor:
                                     name=f"{pkg.name}:{source.relative_to(pkg)}",
                                     status=DoctorStatus.WARN,
                                     message=(
-                                        f"Expected '{source}', but '{target}' points to '{target.resolve()}'."
+                                        f"Expected '{source}', "
+                                        f"but '{target}' points to '{target.resolve()}'."
                                     ),
                                 )
                             )

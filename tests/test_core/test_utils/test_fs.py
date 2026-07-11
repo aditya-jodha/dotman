@@ -5,8 +5,8 @@ from typing import Any
 
 import pytest
 
-from dotman.core.config import ExitCode
 from dotman.core.utils.fs import FileSystemUtil
+from dotman.errors.dotman_error import ExitCode
 
 
 @pytest.fixture
@@ -16,9 +16,7 @@ def fs_util() -> FileSystemUtil:
 
 
 class TestFileSystemUtil:
-    def test_get_inode_key_success(
-        self, fs_util: FileSystemUtil, tmp_path: Path
-    ) -> None:
+    def test_get_inode_key_success(self, fs_util: FileSystemUtil, tmp_path: Path) -> None:
         test_file = tmp_path / "file.txt"
         test_file.write_text("data")
         stat = test_file.stat(follow_symlinks=False)
@@ -36,16 +34,12 @@ class TestFileSystemUtil:
         monkeypatch.setattr(Path, "stat", mock_stat)
         assert fs_util.get_inode_key(test_file) is None
 
-    def test_is_valid_file_or_link_real_file(
-        self, fs_util: FileSystemUtil, tmp_path: Path
-    ) -> None:
+    def test_is_valid_file_or_link_real_file(self, fs_util: FileSystemUtil, tmp_path: Path) -> None:
         f = tmp_path / "real.txt"
         f.write_text("content")
         assert fs_util.is_valid_file_or_link(f) is True
 
-    def test_is_valid_file_or_link_directory(
-        self, fs_util: FileSystemUtil, tmp_path: Path
-    ) -> None:
+    def test_is_valid_file_or_link_directory(self, fs_util: FileSystemUtil, tmp_path: Path) -> None:
         d = tmp_path / "dir"
         d.mkdir()
         assert fs_util.is_valid_file_or_link(d) is False
@@ -87,14 +81,10 @@ class TestFileSystemUtil:
         monkeypatch.setattr(Path, "resolve", mock_resolve)
         assert fs_util.is_valid_file_or_link(link) is False
 
-    def test_path_has_files_empty_directory(
-        self, fs_util: FileSystemUtil, tmp_path: Path
-    ) -> None:
+    def test_path_has_files_empty_directory(self, fs_util: FileSystemUtil, tmp_path: Path) -> None:
         assert fs_util.path_has_files(tmp_path) is False
 
-    def test_path_has_files_nested_success(
-        self, fs_util: FileSystemUtil, tmp_path: Path
-    ) -> None:
+    def test_path_has_files_nested_success(self, fs_util: FileSystemUtil, tmp_path: Path) -> None:
         nested = tmp_path / "sub" / "deep"
         nested.mkdir(parents=True)
         (nested / "payload.cfg").write_text("data")

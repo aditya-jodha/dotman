@@ -8,8 +8,4 @@ def complete_profiles(incomplete: str) -> list[str]:
     if not profiles_dir.exists():
         return []
 
-    return [
-        p.name
-        for p in profiles_dir.iterdir()
-        if p.is_dir() and p.name.startswith(incomplete)
-    ]
+    return [p.name for p in profiles_dir.iterdir() if p.is_dir() and p.name.startswith(incomplete)]
