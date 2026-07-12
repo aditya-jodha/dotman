@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from dotman.core.config import load_config
+from dotman.core.config.config import DotmanConfig
 from dotman.core.doctor import Doctor
 from dotman.core.get_internal_data import InternalData, InternalDataArguments
 from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 class DoctorService:
     def __init__(self, detail: bool):
-        config = load_config()
+        config = DotmanConfig.load()
         self.home_dir: Path = config.home_dir
         self.dotfiles_dir: Path = config.dotfiles_dir
         self.detail = detail

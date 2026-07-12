@@ -95,7 +95,9 @@ def test_list_profiles_delegates_to_profile_manager(
     monkeypatch: pytest.MonkeyPatch, tmp_config: SimpleNamespace
 ) -> None:
     fake_pm = FakeProfileManager(profiles=["a", "b"])
-    monkeypatch.setattr(ps, "load_config", lambda: tmp_config)
+
+    monkeypatch.setattr(ps.DotmanConfig, "load", lambda *_: tmp_config)
+
     monkeypatch.setattr(ps, "ProfileManager", lambda dotfiles_dir: fake_pm)
 
     switcher = ps.ProfileSwitcher()
@@ -106,7 +108,7 @@ def test_create_profile_raises_if_exists_and_creates_when_missing(
     monkeypatch: pytest.MonkeyPatch, tmp_config: SimpleNamespace
 ) -> None:
     fake_pm = FakeProfileManager(profiles=["exists"])
-    monkeypatch.setattr(ps, "load_config", lambda: tmp_config)
+    monkeypatch.setattr(ps.DotmanConfig, "load", lambda *_: tmp_config)
     monkeypatch.setattr(ps, "ProfileManager", lambda dotfiles_dir: fake_pm)
 
     switcher = ps.ProfileSwitcher()
@@ -123,7 +125,7 @@ def test_delete_profile_raises_if_missing_and_deletes_when_present(
     monkeypatch: pytest.MonkeyPatch, tmp_config: SimpleNamespace
 ) -> None:
     fake_pm = FakeProfileManager(profiles=["keep", "remove"])
-    monkeypatch.setattr(ps, "load_config", lambda: tmp_config)
+    monkeypatch.setattr(ps.DotmanConfig, "load", lambda *_: tmp_config)
     monkeypatch.setattr(ps, "ProfileManager", lambda dotfiles_dir: fake_pm)
 
     switcher = ps.ProfileSwitcher()
@@ -139,7 +141,7 @@ def test_switch_profile_raises_if_profile_not_found(
     monkeypatch: pytest.MonkeyPatch, tmp_config: SimpleNamespace
 ) -> None:
     fake_pm = FakeProfileManager(profiles=["one"])
-    monkeypatch.setattr(ps, "load_config", lambda: tmp_config)
+    monkeypatch.setattr(ps.DotmanConfig, "load", lambda *_: tmp_config)
     monkeypatch.setattr(ps, "ProfileManager", lambda dotfiles_dir: fake_pm)
 
     switcher = ps.ProfileSwitcher()
@@ -152,7 +154,7 @@ def test_switch_profile_raises_if_current_profile_none(
 ) -> None:
     # profile exists but ProfileState has no current profile -> metadata corrupted
     fake_pm = FakeProfileManager(profiles=["one", "two"])
-    monkeypatch.setattr(ps, "load_config", lambda: tmp_config)
+    monkeypatch.setattr(ps.DotmanConfig, "load", lambda *_: tmp_config)
     monkeypatch.setattr(ps, "ProfileManager", lambda dotfiles_dir: fake_pm)
     monkeypatch.setattr(ps, "ProfileState", FakeProfileState)
     FakeProfileState._current = None
@@ -166,7 +168,7 @@ def test_switch_profile_noop_when_same_profile(
     monkeypatch: pytest.MonkeyPatch, tmp_config: SimpleNamespace
 ) -> None:
     fake_pm = FakeProfileManager(profiles=["one", "two"])
-    monkeypatch.setattr(ps, "load_config", lambda: tmp_config)
+    monkeypatch.setattr(ps.DotmanConfig, "load", lambda *_: tmp_config)
     monkeypatch.setattr(ps, "ProfileManager", lambda dotfiles_dir: fake_pm)
     monkeypatch.setattr(ps, "ProfileState", FakeProfileState)
     FakeProfileState._current = "one"
@@ -190,7 +192,7 @@ def test_switch_profile_unlink_and_link_called_and_profilestate_set(
     monkeypatch: pytest.MonkeyPatch, tmp_config: SimpleNamespace
 ) -> None:
     fake_pm = FakeProfileManager(profiles=["one", "two"])
-    monkeypatch.setattr(ps, "load_config", lambda: tmp_config)
+    monkeypatch.setattr(ps.DotmanConfig, "load", lambda *_: tmp_config)
     monkeypatch.setattr(ps, "ProfileManager", lambda dotfiles_dir: fake_pm)
     monkeypatch.setattr(
         ps, "ProfileScanner", lambda profile_manager, home_dir: FakeProfileScanner()

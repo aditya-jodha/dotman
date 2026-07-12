@@ -1,10 +1,12 @@
 # ruff: noqa: S101
+# pyright: reportPrivateUsage=false
 from pathlib import Path
 
 import pytest
 import yaml
 
-from dotman.core import config
+from dotman.core.config import config
+from dotman.errors.config_errors import InvalidConfigFileError
 
 
 def test_dotmanconfig_as_dict(tmp_path: Path):
@@ -13,7 +15,7 @@ def test_dotmanconfig_as_dict(tmp_path: Path):
     home = tmp_path / "home"
     home.mkdir()
     cfg = config.DotmanConfig(dotfiles_dir=dir_, home_dir=home)
-    d = cfg.as_dict()
+    d = cfg.model_dump(mode="json")
     assert d["dotfiles_dir"].endswith("dot")
     assert d["home_dir"].endswith("home")
 
@@ -36,17 +38,17 @@ def test_get_temp_log_file_creates_path(tmp_path: Path):
 
 def test_get_config_path_default_and_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     # default path
-    default = config.get_config_path()
+    default = config.DotmanConfig.path()
     assert isinstance(default, Path)
     # env override
     env_path = tmp_path / "custom.yml"
     monkeypatch.setenv(config.CONFIG_ENV_VAR, str(env_path))
-    assert config.get_config_path() == env_path
+    assert config.DotmanConfig.path() == env_path
 
 
 def test_load_config_returns_defaults_when_missing(tmp_path: Path):
     path = tmp_path / "missing.yml"
-    cfg = config.load_config(path)
+    cfg = config.DotmanConfig.load(path)
     assert cfg.dotfiles_dir == config.DEFAULT_DOTFILES_DIR
     assert cfg.home_dir == config.DEFAULT_HOME_DIR
 
@@ -54,8 +56,8 @@ def test_load_config_returns_defaults_when_missing(tmp_path: Path):
 def test_load_config_raises_when_keys_missing(tmp_path: Path):
     path = tmp_path / "bad.yml"
     yaml.safe_dump({"dotfiles_dir": "/some/path"}, path.open("w"))
-    with pytest.raises(ValueError):
-        config.load_config(path)
+    with pytest.raises(InvalidConfigFileError):
+        config.DotmanConfig.load(path)
 
 
 def test_load_config_reads_valid_file(tmp_path: Path):
@@ -66,7 +68,7 @@ def test_load_config_reads_valid_file(tmp_path: Path):
     )
     (tmp_path / "dot").mkdir()
     (tmp_path / "home").mkdir()
-    cfg = config.load_config(path)
+    cfg = config.DotmanConfig.load(path)
     assert cfg.dotfiles_dir == (tmp_path / "dot")
     assert cfg.home_dir == (tmp_path / "home")
 
@@ -76,7 +78,7 @@ def test_save_config_writes_yaml(tmp_path: Path):
     (tmp_path / "dot").mkdir()
     (tmp_path / "home").mkdir()
     cfg = config.DotmanConfig(dotfiles_dir=tmp_path / "dot", home_dir=tmp_path / "home")
-    config.save_config(cfg, path)
+    cfg.save(path)
     data = yaml.safe_load(path.read_text())
     assert data["dotfiles_dir"].endswith("dot")
     assert data["home_dir"].endswith("home")

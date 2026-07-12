@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from dotman.core.config import InternalFileSystemObject
+from dotman.core.config.config import InternalFileSystemObject
 from dotman.core.get_internal_data import InternalData
 from dotman.core.linker import LinkPair
 from dotman.errors.profile_errors import (

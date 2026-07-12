@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from dotman.core.config import load_config
+from dotman.core.config.config import DotmanConfig
 from dotman.core.get_internal_data import InternalDataArguments
 from dotman.core.linker import Linker, LinkResult, Unlinker, UnlinkResult
 from dotman.core.profile import ProfileManager, ProfileScanner, ProfileState
@@ -24,7 +24,7 @@ class ProfileSwitchResult:
 
 class ProfileSwitcher:
     def __init__(self, home_dir: Path | None = None, dotfiles_dir: Path | None = None) -> None:
-        cfg = load_config()
+        cfg = DotmanConfig.load()
         self.home_dir = home_dir or cfg.home_dir
         self.dotfiles_dir = dotfiles_dir or cfg.dotfiles_dir
 

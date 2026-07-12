@@ -15,7 +15,7 @@ def setup_addservice(tmp_path: Path):
 
     # Patch load_config and resolve_profile to avoid real config
     with (
-        patch("dotman.core.config.load_config") as mock_load,
+        patch("dotman.core.config.config.DotmanConfig.load") as mock_load,
         patch("dotman.core.get_internal_data.resolve_profile") as mock_resolve,
         patch("dotman.core.get_internal_data.InternalData.load") as mock_internal,
     ):

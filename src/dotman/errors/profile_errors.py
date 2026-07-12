@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-from dotman.core.config import StrPath
+from dotman.core.config.types import StrPath
 from dotman.errors.dotman_error import (
     ErrorContext,
     ExitCode,

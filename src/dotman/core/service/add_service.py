@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from dotman.cli.common_func import sanitize_package_name
 from dotman.cli.tree_builder import print_beautiful_directory
 from dotman.core.add import AddFiles, RollbackJournal, SymlinkCheck, SymlinkStatus
-from dotman.core.config import load_config
+from dotman.core.config.config import DotmanConfig
 from dotman.core.get_internal_data import InternalData, resolve_profile
 
 if TYPE_CHECKING:
@@ -28,7 +28,7 @@ class AddService:
         dotfiles_dir: Path | None = None,
         profile: str | None = None,
     ) -> None:
-        config = load_config()
+        config = DotmanConfig.load()
         self.home_dir = home_dir or config.home_dir
         self.dotfiles_dir = dotfiles_dir or config.dotfiles_dir
 

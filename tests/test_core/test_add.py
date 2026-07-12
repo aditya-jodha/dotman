@@ -9,7 +9,7 @@ import pytest
 from pytest import MonkeyPatch
 
 from dotman.core.add import AddFiles, SymlinkStatus
-from dotman.core.config import InternalFileSystemObject
+from dotman.core.config.config import InternalFileSystemObject
 from dotman.errors.custom_errors import (
     FileDoesNotExistError,
     FileNameCollidingError,

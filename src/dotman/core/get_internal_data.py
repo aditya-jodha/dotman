@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 import yaml
 
-from dotman.core.config import InternalFileSystemObject, load_config
+from dotman.core.config.config import DotmanConfig, InternalFileSystemObject
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -41,14 +41,15 @@ def resolve_profile(explicit_profile: str | None, internal_data: InternalData) -
 
 @dataclass
 class InternalData:
-    current_profile: str | None
     file_path: Path
+
+    current_profile: str | None
 
     @classmethod
     def load(cls, file_path: Path | None = None) -> InternalData:
         """Load the metadata file."""
         if file_path is None:
-            file_path = load_config().dotfiles_dir / InternalFileSystemObject.METADATA.value
+            file_path = DotmanConfig.load().dotfiles_dir / InternalFileSystemObject.METADATA.value
 
         data: dict[str, str] = {}
         if not file_path.exists():

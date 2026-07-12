@@ -5,7 +5,7 @@ import typer
 from rich.console import Console
 
 from dotman.cli.renderer.factory import RuntimeState
-from dotman.core.config import StrPath
+from dotman.core.config.types import StrPath
 from dotman.errors.dotman_error import DotmanError, ExitCode
 
 console = Console()

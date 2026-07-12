@@ -1,4 +1,4 @@
-from dotman.core.config import StrPath
+from dotman.core.config.types import StrPath
 from dotman.errors.dotman_error import ExitCode, InitializationError, IntegrityError
 from dotman.errors.profile_errors import MetadataContext
 

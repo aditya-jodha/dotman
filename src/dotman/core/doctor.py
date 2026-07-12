@@ -2,7 +2,7 @@ import os
 from enum import Enum
 from pathlib import Path
 
-from dotman.core.config import InternalFileSystemObject
+from dotman.core.config.config import InternalFileSystemObject
 from dotman.core.utils.fs import FileSystemUtil
 
 

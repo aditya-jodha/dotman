@@ -4,12 +4,13 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from dotman.core.config import InternalFileSystemObject, StrPath, load_config
+from dotman.core.config.config import DotmanConfig, InternalFileSystemObject
 from dotman.core.get_internal_data import InternalData, InternalDataArguments
 from dotman.core.utils.fs import FileSystemUtil
 from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
 
 if TYPE_CHECKING:
+    from dotman.core.config.types import StrPath
     from dotman.errors.dotman_error import ExitCode
 
 
@@ -40,7 +41,7 @@ class RemoveService:
         dotfiles_dir: Path | None = None,
         home_dir: Path | None = None,
     ):
-        cgf = load_config()
+        cgf = DotmanConfig.load()
 
         self.dotfiles_dir = dotfiles_dir or cgf.dotfiles_dir
         self.home_dir = home_dir or cgf.home_dir

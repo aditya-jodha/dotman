@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-from dotman.core.config import (
+from dotman.core.config.config import (
+    DotmanConfig,
     InternalFileSystemObject,
-    StrPath,
     get_temp_log_file,
-    load_config,
 )
+from dotman.core.config.types import StrPath
 from dotman.core.utils.fs import FileSystemUtil
 from dotman.errors.custom_errors import (
     FileDoesNotExistError,
@@ -42,7 +42,7 @@ class RollbackJournal:
     NEW_PATH = "new_path"
 
     def __init__(self, log_file: StrPath | None = None):
-        self.path = Path(log_file) if log_file else get_temp_log_file(load_config())
+        self.path = Path(log_file) if log_file else get_temp_log_file(DotmanConfig.load())
         self.entries: list[dict[str, str]] = []
 
     def clear(self):

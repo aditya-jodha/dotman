@@ -1,7 +1,7 @@
 # ruff: noqa: S101
 from pathlib import Path
 
-from dotman.core.config import InternalFileSystemObject
+from dotman.core.config.config import InternalFileSystemObject
 from dotman.core.initializer import Initializer
 
 

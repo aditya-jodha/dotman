@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from dotman.core.config import InternalFileSystemObject
+from dotman.core.config.config import InternalFileSystemObject
 
 
 class Initializer:

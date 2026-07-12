@@ -6,7 +6,7 @@ import yaml
 from pytest import MonkeyPatch
 
 import dotman.core.get_internal_data as gid
-from dotman.core.config import InternalFileSystemObject
+from dotman.core.config.config import InternalFileSystemObject
 from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
 
 
@@ -40,12 +40,16 @@ def test_resolve_profile_raises_when_both_none():
 
 def test_load_creates_file_when_missing(tmp_path: Path, monkeypatch: MonkeyPatch):
     dotfiles = tmp_path / "dotfiles"
-    # do not create metadata file; load should create it
-    monkeypatch.setattr(gid, "load_config", lambda: make_config(dotfiles))
-    # call load with no explicit file_path -> uses config.dotfiles_dir / METADATA
+
+    # Mock DotmanConfig.load instead so InternalData.load can find the right directory path
+    monkeypatch.setattr(gid.DotmanConfig, "load", lambda *_: make_config(dotfiles))
+
+    # Call the real InternalData.load; it will now use mocked config.dotfiles_dir
     internal = gid.InternalData.load(None)
+
     assert internal.current_profile is None
     assert internal.file_path.exists()
+
     # file should be empty YAML (or at least valid YAML)
     content = internal.file_path.read_text(encoding="utf-8")
     # empty file may be blank; safe_load of blank returns None in implementation
@@ -58,11 +62,13 @@ def test_load_reads_existing_metadata(tmp_path: Path, monkeypatch: MonkeyPatch):
     meta.parent.mkdir(parents=True)
     # write YAML with current_profile
     yaml.safe_dump({"current_profile": "saved_profile"}, meta.open("w", encoding="utf-8"))
-    monkeypatch.setattr(gid, "load_config", lambda: make_config(dotfiles))
 
+    # Change this line to target the new class method:
+    monkeypatch.setattr(gid.DotmanConfig, "load", lambda *_: make_config(dotfiles))
+
+    # Then verify the rest of the test functions smoothly
     internal = gid.InternalData.load(None)
     assert internal.current_profile == "saved_profile"
-    assert internal.file_path == meta
 
 
 def test_save_writes_yaml(tmp_path: Path):

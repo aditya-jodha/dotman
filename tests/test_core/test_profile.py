@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from dotman.core.config import InternalFileSystemObject
+from dotman.core.config.config import InternalFileSystemObject
 from dotman.core.get_internal_data import InternalData
 from dotman.core.profile import ProfileManager, ProfileScanner, ProfileState
 from dotman.errors.profile_errors import (
