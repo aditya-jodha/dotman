@@ -4,8 +4,9 @@ from functools import wraps
 import typer
 from rich.console import Console
 
-from dotman.core.config import ExitCode, StrPath
-from dotman.errors.dotman_error import DotmanError
+from dotman.cli.renderer.factory import RuntimeState
+from dotman.core.config.types import StrPath
+from dotman.errors.dotman_error import DotmanError, ExitCode
 
 console = Console()
 
@@ -16,17 +17,21 @@ def handle_errors[**P, R](func: Callable[P, R]) -> Callable[P, R]:
         try:
             return func(*args, **kwargs)
         except DotmanError as e:
-            console.print(f"[red]{e.message}[/red]")
-            raise typer.Exit(code=ExitCode.DOTFILES_FAILURE) from e
+            pay_load = e.to_payload()
+            RuntimeState.renderer.render(pay_load)
+
+            raise typer.Exit(code=pay_load.exit_code) from e
         except KeyboardInterrupt as e:
-            console.print(f"[red]Error: {str(e)} Operation cancelled by user.[/red]")
+            console.print(f"[red]Error: {e!s} Operation cancelled by user.[/red]")
             raise typer.Exit(code=ExitCode.KEYBOARD_INTERRUPT) from e
 
     return wrapper
 
 
 def sanitize_package_name(package: StrPath) -> str:
-    """Sanitizes the package name by replacing spaces with underscores and converting to lowercase."""
+    """
+    Replace spaces with underscores and convert the name to lowercase.
+    """
 
     return (
         str(package)

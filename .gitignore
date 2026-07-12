@@ -12,6 +12,7 @@ wheels/
 
 # Coverage and test artifacts
 .coverage
+coverage.xml
 htmlcov/
 .pytest_cache/
 *.pytest_cache/
@@ -20,7 +21,6 @@ htmlcov/
 .DS_Store
 
 assets
-
 # Virtual environments
 .venv/
 .env/
@@ -29,4 +29,4 @@ assets
 .vscode/
 .idea/
 
-*.log
+*.logcoverage.xml

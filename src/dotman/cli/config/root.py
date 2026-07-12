@@ -1,11 +1,9 @@
-from pathlib import Path
-
 import typer
 import yaml
 from rich.console import Console
 
 from dotman.cli.common_func import handle_errors
-from dotman.core.config import DotmanConfig, load_config, save_config
+from dotman.core.config.config import DotmanConfig
 
 config_app = typer.Typer(help="Manage items in the system")
 
@@ -32,12 +30,12 @@ def config_callback(ctx: typer.Context):
 @config_app.command(help="View dotman configuration.")
 @handle_errors
 def show():
-    console.print(yaml.dump(load_config().as_dict(), default_flow_style=False))
+    console.print(yaml.dump(DotmanConfig.load().model_dump(mode="json"), default_flow_style=False))
 
 
 @config_app.command(help="Get a configuration value.")
 def get(key: str):
-    data = load_config().as_dict()
+    data = DotmanConfig.load().model_dump(mode="json")
     if key not in data:
         console.print(f"[red]Invalid key: {key}[/]")
         return
@@ -52,18 +50,10 @@ def set(
 ):
     """Update a configuration value."""
 
-    if key is None or value is None:
-        console.print("[red]Missing key or value.[/]")
-        return
-    data = load_config().as_dict()
-    if key not in data:
-        console.print(f"[red]Invalid key: {key}[/]")
-        return
-    data[key] = value
-    save_config(
-        DotmanConfig(
-            dotfiles_dir=Path(data["dotfiles_dir"]),
-            home_dir=Path(data["home_dir"]),
-        )
-    )
+    cfg = DotmanConfig.load()
+
+    cfg = cfg.set(key, value)
+
+    cfg.save()
+
     console.print(f"[green]Updated {key} to {value}[/]")

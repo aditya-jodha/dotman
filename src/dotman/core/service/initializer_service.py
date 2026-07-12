@@ -1,15 +1,13 @@
 from pathlib import Path
 
-from dotman.core.config import load_config
+from dotman.core.config.config import DotmanConfig
 from dotman.core.initializer import Initializer
 from dotman.errors.initializer_errors import DotmanDotfilesBackupDirExistsError
 
 
 class InitializerService:
-    def __init__(
-        self, home_dir: Path | None = None, dotfiles_dir: Path | None = None
-    ) -> None:
-        cfg = load_config()
+    def __init__(self, home_dir: Path | None = None, dotfiles_dir: Path | None = None) -> None:
+        cfg = DotmanConfig.load()
         self.dotfiles_dir = dotfiles_dir or cfg.dotfiles_dir
         self.home_dir = home_dir or cfg.home_dir
         self.initializer = Initializer(self.home_dir, self.dotfiles_dir)

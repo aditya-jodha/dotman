@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
 
-from dotman.core.config import load_config
+from dotman.core.config.config import DotmanConfig
 from dotman.core.doctor import Doctor
-from dotman.core.get_internal_data import InternalData, InternalDataArguments
+from dotman.core.get_internal_data import DotmanMetadata, DotmanMetadataField
 from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
 
 if TYPE_CHECKING:
@@ -11,18 +11,16 @@ if TYPE_CHECKING:
 
 class DoctorService:
     def __init__(self, detail: bool):
-        config = load_config()
+        config = DotmanConfig.load()
         self.home_dir: Path = config.home_dir
         self.dotfiles_dir: Path = config.dotfiles_dir
         self.detail = detail
-        self.internal_data: InternalData = InternalData.load()
+        self.internal_data: DotmanMetadata = DotmanMetadata.load()
 
     def load(self):
         current_profile = self.internal_data.current_profile
         if current_profile is None:
-            raise ProfileMetaDataFileCorruptedError(
-                InternalDataArguments.CURRENT_PROFILE
-            )
+            raise ProfileMetaDataFileCorruptedError(DotmanMetadataField.CURRENT_PROFILE)
 
         self.doctor = Doctor(
             profile_name=current_profile,

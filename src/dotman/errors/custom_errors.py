@@ -1,79 +1,134 @@
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from .dotman_error import DotmanError
+from dotman.errors.dotman_error import (
+    Category,
+    DotmanError,
+    ErrorContext,
+    ExitCode,
+    FilesystemError,
+)
+
+# ----------------------------------------------------
+# Leaf Context Schemas
+# ----------------------------------------------------
 
 
-class SymlinkNotSupportedError(DotmanError):
-    """Raised when a symlink file comes in AddFiles logic. This is a user error."""
+@dataclass(frozen=True)
+class PathErrorContext(ErrorContext):
+    """Context payload tracking standard file or directory paths."""
+
+    file_path: Path
+
+
+@dataclass(frozen=True)
+class SubPathErrorContext(ErrorContext):
+    """Context payload for verifying structural path bounds."""
+
+    file_path: Path
+    boundary_type: Literal["home", "dotfiles"]
+
+
+@dataclass(frozen=True)
+class PackageErrorContext(ErrorContext):
+    """Context payload tracking concrete package identifiers."""
+
+    package_name: str | None
+    is_internal: bool
+
+
+# ----------------------------------------------------
+# Leaf Concrete Exceptions
+# ----------------------------------------------------
+
+
+class SymlinkNotSupportedError(FilesystemError):
+    EXIT_CODE = ExitCode.INVALID_ARGUMENTS
 
     def __init__(self, *args: object) -> None:
-        super().__init__(
-            *args,
-            message=(
-                "The selected file path is a symbolic link.\n\n"
-                + "Dotman only manages real files and directories.\n"
-                + "Add the symlink target instead."
-            ),
+        # Keeps original positional *args processing safe
+        if args:
+            raise TypeError("SymlinkNotSupportedError does not accept positional arguments")  # noqa: TRY003
+
+        self.message = (
+            "The selected file path is a symbolic link.\n\n"
+            "Dotman only manages real files and directories.\n"
+            "Add the symlink target instead."
         )
+        super().__init__(message=self.message)
 
 
-class FileDoesNotExistError(DotmanError):
-    """Raised when a file does not exist. This is a user error"""
+class FileDoesNotExistError(FilesystemError):
+    EXIT_CODE = ExitCode.INVALID_ARGUMENTS
 
     def __init__(self, file: Path) -> None:
-        super().__init__(message=f"File {file} does not exist")
+        self.message = f"File {file} does not exist"
+        super().__init__(message=self.message, context=PathErrorContext(file_path=file))
 
 
-class IsNotASubPathError(DotmanError):
-    """Raised when a path is not a subpath of the home directory. This is a user error."""
+class IsNotASubPathError(FilesystemError):
+    EXIT_CODE = ExitCode.INVALID_ARGUMENTS
 
     def __init__(self, file: Path, of: Literal["home", "dotfiles"] = "home") -> None:
-        super().__init__(
-            message=f"file `{file}` is not a subpath of the {of} directory"
-        )
+        self.message = f"file `{file}` is not a subpath of the {of} directory"
+        # Keeps your original explicit instance variable intact
         self.file = file
+        super().__init__(
+            message=self.message, context=SubPathErrorContext(file_path=file, boundary_type=of)
+        )
 
 
-class FileOutsideHomeError(DotmanError):
-    """Raised when a file is outside the home directory. This is a user error."""
+class FileOutsideHomeError(FilesystemError):
+    EXIT_CODE = ExitCode.INVALID_ARGUMENTS
 
     def __init__(self, file: Path) -> None:
-        super().__init__(message=f"File `{file}` is outside the home directory")
+        self.message = f"File `{file}` is outside the home directory"
+        super().__init__(message=self.message, context=PathErrorContext(file_path=file))
 
 
 class InvalidPackageNameError(DotmanError):
-    """Raised when a package name is invalid. This is a user error."""
+    EXIT_CODE = ExitCode.INVALID_ARGUMENTS
+    CATEGORY = Category.GENERIC
 
     def __init__(self, package: str | None, is_internal_package: bool) -> None:
         self.dotman_internal_package = is_internal_package
         pkg_type = "internal" if self.dotman_internal_package else "external"
-        super().__init__(message=f"Invalid {pkg_type} package name: {package}")
+        self.message = f"Invalid {pkg_type} package name: {package}"
+        super().__init__(
+            message=self.message,
+            context=PackageErrorContext(package_name=package, is_internal=is_internal_package),
+        )
 
 
-class TargetFileIsHomeError(DotmanError):
-    """Raised when the target file is the home directory. This is a user error."""
-
-    def __init__(self, file: Path) -> None:
-        super().__init__(message=f"Target file `{file}` can't is the home directory")
-
-
-class TargetFileIsDotfilesDirError(DotmanError):
-    """Raised when the target file is the dotfiles directory. This is a user error."""
+class TargetFileIsHomeError(FilesystemError):
+    EXIT_CODE = ExitCode.INVALID_ARGUMENTS
 
     def __init__(self, file: Path) -> None:
-        super().__init__(message=f"Target file `{file}` is the dotfiles directory")
+        self.message = f"Target file `{file}` can't is the home directory"
+        super().__init__(message=self.message, context=PathErrorContext(file_path=file))
 
 
-class FileNameCollidingError(DotmanError):
-    """Raised when the target file name present in dotfiles directory"""
+class TargetFileIsDotfilesDirError(FilesystemError):
+    EXIT_CODE = ExitCode.INVALID_ARGUMENTS
 
     def __init__(self, file: Path) -> None:
-        super().__init__(message=f"Target file `{file}` name is colliding")
+        self.message = f"Target file `{file}` is the dotfiles directory"
+        super().__init__(message=self.message, context=PathErrorContext(file_path=file))
+
+
+class FileNameCollidingError(FilesystemError):
+    EXIT_CODE = ExitCode.INVALID_ARGUMENTS
+
+    def __init__(self, file: Path) -> None:
+        self.message = f"Target file `{file}` name is colliding"
+        super().__init__(message=self.message, context=PathErrorContext(file_path=file))
 
 
 class PackageNotExistsError(DotmanError):
-    """Raised when the package does not exist."""
+    EXIT_CODE = ExitCode.INVALID_ARGUMENTS
+    CATEGORY = Category.GENERIC
 
     def __init__(self) -> None:
-        super().__init__(message="No packages found.")
+        self.message = "No packages found."
+        super().__init__(message=self.message)

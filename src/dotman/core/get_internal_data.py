@@ -4,29 +4,31 @@ This module is used to get data from internal files.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from enum import Enum
-from typing import TYPE_CHECKING
+from enum import StrEnum
+
+# if TYPE_CHECKING:
+from pathlib import (
+    Path,  # noqa: TC003 # When Pydantic builds the model, it has to resolve "Path" into the real pathlib.Path
+)
+from typing import Self
 
 import yaml
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from dotman.core.config import InternalFileSystemObject, load_config
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
+from dotman.core.config.config import DotmanConfig, InternalFileSystemObject
+from dotman.errors.config_errors import DotmanConfigParseError, InvalidConfigFileError
 from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
 
 
-class InternalDataArguments(Enum):
+class DotmanMetadataField(StrEnum):
     CURRENT_PROFILE = "current_profile"
 
 
-def resolve_profile(explicit_profile: str | None, internal_data: InternalData) -> str:
+def resolve_profile(explicit_profile: str | None, internal_data: DotmanMetadata) -> str:
     """
     Decide which profile to use:
     - If the caller passed a profile, use it.
-    - Otherwise, fall back to the current profile in InternalData.
+    - Otherwise, fall back to the current profile in DotmanMetadata.
     - If neither is available, raise ProfileMetaDataFileCorruptedError.
     """
     if explicit_profile is not None:
@@ -36,40 +38,46 @@ def resolve_profile(explicit_profile: str | None, internal_data: InternalData) -
         return internal_data.current_profile
 
     # If we reach here, both are None → corrupted metadata
-    raise ProfileMetaDataFileCorruptedError(
-        InternalDataArguments.CURRENT_PROFILE, False
+    raise ProfileMetaDataFileCorruptedError(DotmanMetadataField.CURRENT_PROFILE, False)
+
+
+class DotmanMetadata(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
     )
+    file_path: Path = Field(exclude=True)
 
-
-@dataclass
-class InternalData:
-    current_profile: str | None
-    file_path: Path
+    current_profile: str | None = None
 
     @classmethod
-    def load(cls, file_path: Path | None = None) -> InternalData:
+    def load(cls, file_path: Path | None = None) -> Self:
         """Load the metadata file."""
         if file_path is None:
-            file_path = (
-                load_config().dotfiles_dir / InternalFileSystemObject.METADATA.value
-            )
+            file_path = DotmanConfig.load().dotfiles_dir / InternalFileSystemObject.METADATA.value
 
         data: dict[str, str] = {}
         if not file_path.exists():
             file_path.parent.mkdir(parents=True, exist_ok=True)
             file_path.touch()
+
             return cls(
-                current_profile=None,
                 file_path=file_path,
             )
 
-        with file_path.open("r", encoding="utf-8") as f:
-            data = yaml.safe_load(f) or {}
+        try:
+            with file_path.open("r", encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
 
-        return cls(
-            current_profile=data.get(InternalDataArguments.CURRENT_PROFILE.value, None),
-            file_path=file_path,
-        )
+            return cls.model_validate(
+                {
+                    **data,
+                    "file_path": file_path,
+                },
+            )
+        except yaml.YAMLError as e:
+            raise DotmanConfigParseError(file_path, e) from e
+        except ValidationError as e:
+            raise InvalidConfigFileError(path=file_path, error=e) from e
 
     def save(self) -> None:
         """Update the metadata file with the current profile."""
@@ -78,11 +86,13 @@ class InternalData:
             exist_ok=True,
         )
         with self.file_path.open("w", encoding="utf-8") as f:
-            yaml.safe_dump(
-                {InternalDataArguments.CURRENT_PROFILE.value: self.current_profile}, f
-            )
+            yaml.safe_dump(self.model_dump(mode="json"), f)
 
-    def write(self, profile: str) -> None:
-        """Write a new profile to the metadata file."""
-        self.current_profile = profile
-        self.save()
+    def with_current_profile(self, profile: str) -> Self:
+        return self.model_copy(update={"current_profile": profile})
+
+    def current_profile_or_raise(self) -> str:
+        if self.current_profile is None:
+            raise ProfileMetaDataFileCorruptedError(DotmanMetadataField.CURRENT_PROFILE)
+
+        return self.current_profile

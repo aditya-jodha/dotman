@@ -31,9 +31,7 @@ def lab(tmp_path: Path) -> LabPaths:
     home.mkdir()
     profile_root = dotfiles / "profiles" / profile
     profile_root.mkdir(parents=True)
-    return LabPaths(
-        home=home, dotfiles_dir=dotfiles, profile=profile, profile_root=profile_root
-    )
+    return LabPaths(home=home, dotfiles_dir=dotfiles, profile=profile, profile_root=profile_root)
 
 
 # -------------------------
@@ -122,10 +120,7 @@ class TestSymlinkStatus:
         src = lab.profile_root / "file.txt"
         src.touch()
         tgt = lab.home / "file.txt"
-        assert (
-            self.setup_doctor(lab).get_symlink_status(src, tgt)
-            == SymlinkStatus.MISSING_TARGET
-        )
+        assert self.setup_doctor(lab).get_symlink_status(src, tgt) == SymlinkStatus.MISSING_TARGET
 
     def test_broken_symlink(self, lab: LabPaths) -> None:
         broken = lab.home / "ghost.txt"
@@ -142,10 +137,7 @@ class TestSymlinkStatus:
         tgt = lab.profile_root / "pkg" / "pure.txt"
         tgt.parent.mkdir()
         tgt.touch()
-        assert (
-            self.setup_doctor(lab).get_symlink_status(src, tgt)
-            == SymlinkStatus.NOT_A_SYMLINK
-        )
+        assert self.setup_doctor(lab).get_symlink_status(src, tgt) == SymlinkStatus.NOT_A_SYMLINK
 
     def test_wrong_source(self, lab: LabPaths) -> None:
         correct = lab.home / "file.txt"
@@ -156,8 +148,7 @@ class TestSymlinkStatus:
         link.parent.mkdir()
         link.symlink_to(wrong)
         assert (
-            self.setup_doctor(lab).get_symlink_status(correct, link)
-            == SymlinkStatus.WRONG_SOURCE
+            self.setup_doctor(lab).get_symlink_status(correct, link) == SymlinkStatus.WRONG_SOURCE
         )
 
     def test_ok_symlink(self, lab: LabPaths) -> None:
@@ -253,9 +244,7 @@ class TestIsSymlinked:
         tgt.symlink_to(src)
         doctor = Doctor(lab.profile, lab.home, lab.dotfiles_dir, detail=True)
         checks = doctor.is_symlinked()
-        assert any(
-            c.status == DoctorStatus.OK and "Link OK" in c.message for c in checks
-        )
+        assert any(c.status == DoctorStatus.OK and "Link OK" in c.message for c in checks)
 
     def test_all_ok_without_detail_returns_summary_ok(self, lab: LabPaths) -> None:
         pkg = lab.profile_root / "pkg"

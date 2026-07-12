@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 from dotman.cli.common_func import sanitize_package_name
 from dotman.cli.tree_builder import print_beautiful_directory
 from dotman.core.add import AddFiles, RollbackJournal, SymlinkCheck, SymlinkStatus
-from dotman.core.config import load_config
-from dotman.core.get_internal_data import InternalData, resolve_profile
+from dotman.core.config.config import DotmanConfig
+from dotman.core.get_internal_data import DotmanMetadata
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -28,18 +28,17 @@ class AddService:
         dotfiles_dir: Path | None = None,
         profile: str | None = None,
     ) -> None:
-        config = load_config()
+        config = DotmanConfig.load()
         self.home_dir = home_dir or config.home_dir
         self.dotfiles_dir = dotfiles_dir or config.dotfiles_dir
 
         self.journal = RollbackJournal()
-        self.internal_data: InternalData = InternalData.load()
+        self.internal_data: DotmanMetadata = DotmanMetadata.load()
 
         self.file = file
         self.package: str = sanitize_package_name(package)
 
-        # will raise ProfileMetaDataFileCorruptedError if profile is not resolved
-        self.profile = resolve_profile(profile, self.internal_data)
+        self.profile = profile or self.internal_data.current_profile_or_raise()
 
         self.add_files = AddFiles(
             file=self.file,
@@ -58,15 +57,9 @@ class AddService:
         # NOTE: Will not create anything in preview
 
         self.add_files.validate()
-        symlink_checks: list[SymlinkCheck] = (
-            self.add_files.validate_directory_symlinks()
-        )
+        symlink_checks: list[SymlinkCheck] = self.add_files.validate_directory_symlinks()
 
-        warnings = [
-            check.message
-            for check in symlink_checks
-            if check.status != SymlinkStatus.OK
-        ]
+        warnings = [check.message for check in symlink_checks if check.status != SymlinkStatus.OK]
 
         package_created = not self.add_files.package_exists
 

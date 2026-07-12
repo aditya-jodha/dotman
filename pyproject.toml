@@ -1,50 +1,25 @@
 [project]
 name = "dotman"
-version = "0.7.0"
-authors = [
-  { name="Aditya Pratap Singh Rathore"},
-]
+version = "0.7.3"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12.13"
+authors = [
+  { name = "Aditya Pratap Singh Rathore" }
+]
 dependencies = [
+    "pydantic>=2.13.4",
     "pyyaml>=6.0.3",
     "rich>=15.0.0",
     "typer>=0.26.4",
 ]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-
 [project.scripts]
 dotman = "dotman.__cli__:app"
 
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/dotman"]
-
-[tool.coverage.run]
-omit = [
-    "src/dotman/errors/*",
-    "tests/*",
-
-    # TODO: Re-enable CLI coverage once dedicated CLI integration tests are added.
-    # CLI wrappers (temporary)
-    "src/dotman/cli/app/*",
-    "src/dotman/cli/profile/*",
-    "src/dotman/cli/config/*",
-]
-
-[tool.coverage.report]
-exclude_also = [
-    'if __name__ == "__main__":',
-]
-
-
-[tool.typer]
-main = "dotman.__cli__:app"
+[build-system]
+requires = ["uv_build>=0.11.26,<0.12.0"]
+build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
@@ -53,4 +28,48 @@ dev = [
     "pytest-cov>=7.1.0",
     "ruff>=0.15.16",
     "ty>=0.0.54",
+]
+
+# --- Build & Tooling Layout ---
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dotman"]
+
+[tool.typer]
+main = "dotman.__cli__:app"
+
+# --- Linting & Formatting (Ruff) ---
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "ARG", "B", "BLE", "C4", "DTZ", "E", "F", "FA", "FURB", "I", 
+    "N", "NPY", "PD", "PERF", "PLC", "PLE", "PTH", "RET", "RUF", 
+    "S", "SIM", "TC", "TID", "TRY", "UP", "W", "YTT"
+]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint.pycodestyle]
+# Avoids triggering E501 on task comments (like TODO, FIXME)
+ignore-overlong-task-comments = true
+
+# --- Testing & Coverage ---
+
+[tool.coverage.run]
+omit = [
+    "src/dotman/errors/*",
+    "tests/*",
+    # TODO: Re-enable CLI coverage once dedicated CLI integration tests are added.
+    "src/dotman/cli/app/*",
+    "src/dotman/cli/profile/*",
+    "src/dotman/cli/config/*",
+]
+
+[tool.coverage.report]
+exclude_also = [
+    'if __name__ == "__main__":',
 ]

@@ -2,7 +2,7 @@ from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
 
-from dotman.core.config import load_config
+from dotman.core.config.config import DotmanConfig
 from dotman.errors.validator_errors import (
     DotmanMetadataFileCorruptedError,
     DotmanNotInitializedError,
@@ -11,10 +11,8 @@ from dotman.errors.validator_errors import (
 
 
 class DotmanValidator:
-    def __init__(
-        self, dotfiles_dir: Path | None = None, home_dir: Path | None = None
-    ) -> None:
-        cgf = load_config()
+    def __init__(self, dotfiles_dir: Path | None = None, home_dir: Path | None = None) -> None:
+        cgf = DotmanConfig.load()
         self.dotfiles_dir = dotfiles_dir or cgf.dotfiles_dir
         self.home_dir = home_dir or cgf.home_dir
         self.metadata: Path = self.dotfiles_dir / "metadata.yml"

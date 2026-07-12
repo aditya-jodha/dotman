@@ -1,6 +1,7 @@
 import shutil
 import time
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 
 from dotman.core.doctor import Doctor, SymlinkStatus
@@ -13,7 +14,7 @@ class LinkPair:
     target: Path
 
 
-class LinkAction:
+class LinkAction(StrEnum):
     SKIP = "skip"
     LINK = "link"
     BACKUP_AND_LINK = "backup_and_link"
@@ -45,9 +46,7 @@ class UnlinkResult:
 
 
 class LinkResult:
-    def __init__(
-        self, source: Path, target: Path, action: str, status: str, message: str = ""
-    ):
+    def __init__(self, source: Path, target: Path, action: str, status: str, message: str = ""):
         self.source = source
         self.target = target
         self.action = action
@@ -134,9 +133,7 @@ class Linker:
 
     def link(self, linkpairs: list[LinkPair]) -> list[LinkResult]:
         """Links a source file to a target path."""
-        return [
-            self.execute(linkpair.source, linkpair.target) for linkpair in linkpairs
-        ]
+        return [self.execute(linkpair.source, linkpair.target) for linkpair in linkpairs]
 
 
 class Unlinker:

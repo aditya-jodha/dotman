@@ -47,5 +47,7 @@ def show_summary(report: SummeryReport):
         progress.update(task, advance=report.error)
 
     console.print(
-        f"[green]OK: {report.ok}[/] | [yellow]WARN: {report.warn}[/] | [red]ERROR: {report.error}[/]"
+        f"[green]OK: {report.ok}[/] |",
+        f"[yellow]WARN: {report.warn}[/] |",
+        f"[red]ERROR: {report.error}[/]",
     )

@@ -28,7 +28,8 @@ def test_ensure_profile_exists_raises_when_profiles_missing(
     # do not create profiles dir
     home = tmp_path / "home"
     home.mkdir()
-    monkeypatch.setattr(validator, "load_config", lambda: make_config(dotfiles, home))
+
+    monkeypatch.setattr(validator.DotmanConfig, "load", lambda *_: make_config(dotfiles, home))
 
     v = validator.DotmanValidator()
     # profiles_dir does not exist -> should raise
@@ -43,7 +44,7 @@ def test_enure_metadata_exists_raises_when_metadata_missing(
     dotfiles.mkdir(parents=True)
     home = tmp_path / "home"
     home.mkdir()
-    monkeypatch.setattr(validator, "load_config", lambda: make_config(dotfiles, home))
+    monkeypatch.setattr(validator.DotmanConfig, "load", lambda *_: make_config(dotfiles, home))
 
     v = validator.DotmanValidator()
     # metadata file not present -> should raise DotmanMetadataFileCorruptedError
@@ -89,7 +90,7 @@ def test_validate_initialized_various_failures(
             p.unlink(missing_ok=True)
         home.rmdir()
 
-    monkeypatch.setattr(validator, "load_config", lambda: make_config(dotfiles, home))
+    monkeypatch.setattr(validator.DotmanConfig, "load", lambda *_: make_config(dotfiles, home))
     v = validator.DotmanValidator()
 
     with pytest.raises(expected_exception):
@@ -146,9 +147,7 @@ def test_require_initialized_decorator_calls_validator(monkeypatch: MonkeyPatch)
     def fake_validate(self):
         called["count"] += 1
 
-    monkeypatch.setattr(
-        validator.DotmanValidator, "validate_initialized", fake_validate
-    )
+    monkeypatch.setattr(validator.DotmanValidator, "validate_initialized", fake_validate)
 
     @validator.require_initialized
     def target(a, b=1):
@@ -162,9 +161,7 @@ def test_require_initialized_decorator_calls_validator(monkeypatch: MonkeyPatch)
     def raise_validate(self):
         raise DotmanNotInitializedError()
 
-    monkeypatch.setattr(
-        validator.DotmanValidator, "validate_initialized", raise_validate
-    )
+    monkeypatch.setattr(validator.DotmanValidator, "validate_initialized", raise_validate)
 
     executed = {"ran": False}
 
@@ -198,9 +195,7 @@ def test_require_profile_decorator_calls_validator(monkeypatch: MonkeyPatch):
     def raise_ensure(self):
         raise DotmanProfileNotInitializedError()
 
-    monkeypatch.setattr(
-        validator.DotmanValidator, "ensure_profile_exists", raise_ensure
-    )
+    monkeypatch.setattr(validator.DotmanValidator, "ensure_profile_exists", raise_ensure)
 
     executed = {"ran": False}
 

@@ -30,7 +30,7 @@ def test_keyboard_interrupt_handling(monkeypatch: pytest.MonkeyPatch) -> None:
 
     # Assertions on the patched components
     mock_print.assert_called_once_with("\n[red]Process interrupted. Exiting safely.[/]")
-    mock_exit.assert_called_once_with(0)
+    mock_exit.assert_called_once_with(130)
 
 
 def test_root_app_help():

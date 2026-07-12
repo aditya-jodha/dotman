@@ -2,11 +2,16 @@ from __future__ import annotations
 
 from enum import Enum, auto
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from dotman.core.config import ExitCode, InternalFileSystemObject, StrPath, load_config
-from dotman.core.get_internal_data import InternalData, InternalDataArguments
+from dotman.core.config.config import DotmanConfig, InternalFileSystemObject
+from dotman.core.get_internal_data import DotmanMetadata, DotmanMetadataField
 from dotman.core.utils.fs import FileSystemUtil
 from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
+
+if TYPE_CHECKING:
+    from dotman.core.config.types import StrPath
+    from dotman.errors.dotman_error import ExitCode
 
 
 class RemoveStatus(Enum):
@@ -36,7 +41,7 @@ class RemoveService:
         dotfiles_dir: Path | None = None,
         home_dir: Path | None = None,
     ):
-        cgf = load_config()
+        cgf = DotmanConfig.load()
 
         self.dotfiles_dir = dotfiles_dir or cgf.dotfiles_dir
         self.home_dir = home_dir or cgf.home_dir
@@ -88,20 +93,14 @@ class RemoveService:
 
     @staticmethod
     def _get_profile_path(dotfiles_dir: Path) -> Path:
-        current_profile = InternalData.load().current_profile
+        current_profile = DotmanMetadata.load().current_profile
 
         if current_profile is None:
-            raise ProfileMetaDataFileCorruptedError(
-                InternalDataArguments.CURRENT_PROFILE
-            )
+            raise ProfileMetaDataFileCorruptedError(DotmanMetadataField.CURRENT_PROFILE)
 
-        profile: Path = (
-            dotfiles_dir / InternalFileSystemObject.PROFILES.value / current_profile
-        )
+        profile: Path = dotfiles_dir / InternalFileSystemObject.PROFILES.value / current_profile
         if not profile.exists():
-            raise ProfileMetaDataFileCorruptedError(
-                InternalDataArguments.CURRENT_PROFILE, False
-            )
+            raise ProfileMetaDataFileCorruptedError(DotmanMetadataField.CURRENT_PROFILE, False)
 
         return profile
 

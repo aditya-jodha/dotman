@@ -1,12 +1,11 @@
-# ruff: noqa: S101, S108
+# ruff: noqa: S101
 from pathlib import Path
 
 import pytest
 import yaml
-from pytest import MonkeyPatch
 
-import dotman.core.get_internal_data as gid
-from dotman.core.config import InternalFileSystemObject
+from dotman.core.get_internal_data import DotmanMetadata, resolve_profile
+from dotman.errors.config_errors import DotmanConfigParseError, InvalidConfigFileError
 from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
 
 
@@ -22,66 +21,63 @@ def make_config(dotfiles_dir: Path):
     return c
 
 
-def test_resolve_profile_prefers_explicit():
-    internal = gid.InternalData(current_profile="internal", file_path=Path("/tmp/x"))
-    assert gid.resolve_profile("explicit", internal) == "explicit"
+class TestResolveProfile:
+    def test_explicit_profile_wins(self):
+        md = DotmanMetadata(file_path=Path("dummy"), current_profile="meta")
+        assert resolve_profile("explicit", md) == "explicit"
+
+    def test_fallback_to_metadata(self):
+        md = DotmanMetadata(file_path=Path("dummy"), current_profile="meta")
+        assert resolve_profile(None, md) == "meta"
+
+    def test_both_none_raises(self):
+        md = DotmanMetadata(file_path=Path("dummy"), current_profile=None)
+        with pytest.raises(ProfileMetaDataFileCorruptedError):
+            resolve_profile(None, md)
 
 
-def test_resolve_profile_uses_internal_when_explicit_none():
-    internal = gid.InternalData(current_profile="internal", file_path=Path("/tmp/x"))
-    assert gid.resolve_profile(None, internal) == "internal"
+class TestDotmanMetadata:
+    def test_load_creates_file_if_missing(self, tmp_path: Path):
+        file_path = tmp_path / "meta.yaml"
+        md = DotmanMetadata.load(file_path)
+        assert md.file_path == file_path
+        assert md.current_profile is None
+        assert file_path.exists()
 
+    def test_load_valid_yaml(self, tmp_path: Path):
+        file_path = tmp_path / "meta.yaml"
+        file_path.write_text(yaml.safe_dump({"current_profile": "abc"}))
+        md = DotmanMetadata.load(file_path)
+        assert md.current_profile == "abc"
 
-def test_resolve_profile_raises_when_both_none():
-    internal = gid.InternalData(current_profile=None, file_path=Path("/tmp/x"))
-    with pytest.raises(ProfileMetaDataFileCorruptedError):
-        gid.resolve_profile(None, internal)
+    def test_load_yaml_error(self, tmp_path: Path):
+        file_path = tmp_path / "meta.yaml"
+        file_path.write_text(":\n:bad_yaml")
+        with pytest.raises(DotmanConfigParseError):
+            DotmanMetadata.load(file_path)
 
+    def test_load_validation_error(self, tmp_path: Path):
+        file_path = tmp_path / "meta.yaml"
+        file_path.write_text(yaml.safe_dump({"unknown_field": "oops"}))
+        with pytest.raises(InvalidConfigFileError):
+            DotmanMetadata.load(file_path)
 
-def test_load_creates_file_when_missing(tmp_path: Path, monkeypatch: MonkeyPatch):
-    dotfiles = tmp_path / "dotfiles"
-    # do not create metadata file; load should create it
-    monkeypatch.setattr(gid, "load_config", lambda: make_config(dotfiles))
-    # call load with no explicit file_path -> uses config.dotfiles_dir / METADATA
-    internal = gid.InternalData.load(None)
-    assert internal.current_profile is None
-    assert internal.file_path.exists()
-    # file should be empty YAML (or at least valid YAML)
-    content = internal.file_path.read_text(encoding="utf-8")
-    # empty file may be blank; safe_load of blank returns None in implementation
-    assert content == "" or isinstance(content, str)
+    def test_save_and_with_current_profile(self, tmp_path: Path):
+        file_path = tmp_path / "meta.yaml"
+        md = DotmanMetadata(file_path=file_path, current_profile="one")
+        md.save()
+        data = yaml.safe_load(file_path.read_text())
+        assert data["current_profile"] == "one"
 
+        new_md = md.with_current_profile("two")
+        new_md.save()
+        assert new_md.current_profile == "two"
+        data2 = yaml.safe_load(file_path.read_text())
+        assert data2["current_profile"] == "two"
 
-def test_load_reads_existing_metadata(tmp_path: Path, monkeypatch: MonkeyPatch):
-    dotfiles = tmp_path / "dotfiles"
-    meta = dotfiles / InternalFileSystemObject.METADATA.value
-    meta.parent.mkdir(parents=True)
-    # write YAML with current_profile
-    yaml.safe_dump(
-        {"current_profile": "saved_profile"}, meta.open("w", encoding="utf-8")
-    )
-    monkeypatch.setattr(gid, "load_config", lambda: make_config(dotfiles))
-
-    internal = gid.InternalData.load(None)
-    assert internal.current_profile == "saved_profile"
-    assert internal.file_path == meta
-
-
-def test_save_writes_yaml(tmp_path: Path):
-    # create an InternalData pointing to a file path
-    file_path = tmp_path / "meta.yaml"
-    internal = gid.InternalData(current_profile="me", file_path=file_path)
-    # ensure parent exists and call save
-    internal.save()
-    # file must exist and contain the YAML mapping
-    data = yaml.safe_load(file_path.read_text(encoding="utf-8"))
-    assert data.get("current_profile") == "me"
-
-
-def test_write_updates_and_saves(tmp_path: Path):
-    file_path = tmp_path / "meta.yaml"
-    internal = gid.InternalData(current_profile=None, file_path=file_path)
-    internal.write("new_profile")
-    assert internal.current_profile == "new_profile"
-    data = yaml.safe_load(file_path.read_text(encoding="utf-8"))
-    assert data.get("current_profile") == "new_profile"
+    def test_current_profile_or_raise(self, tmp_path: Path):
+        md = DotmanMetadata(file_path=tmp_path / "meta.yaml", current_profile="x")
+        assert md.current_profile_or_raise() == "x"
+        md_none = DotmanMetadata(file_path=tmp_path / "meta.yaml", current_profile=None)
+        with pytest.raises(ProfileMetaDataFileCorruptedError):
+            md_none.current_profile_or_raise()

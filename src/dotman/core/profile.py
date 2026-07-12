@@ -1,7 +1,6 @@
 from pathlib import Path
 
-from dotman.core.config import InternalFileSystemObject
-from dotman.core.get_internal_data import InternalData
+from dotman.core.config.config import InternalFileSystemObject
 from dotman.core.linker import LinkPair
 from dotman.errors.profile_errors import (
     DirNotEmptyError,
@@ -10,25 +9,10 @@ from dotman.errors.profile_errors import (
 )
 
 
-class ProfileState:
-    @staticmethod
-    def get_current_profile(meta_path: Path | None = None) -> str | None:
-        load = InternalData.load(file_path=meta_path)
-        return load.current_profile
-
-    @staticmethod
-    def set_current_profile(name: str, meta_path: Path | None = None) -> None:
-        load = InternalData.load(file_path=meta_path)
-        load.current_profile = name
-        load.save()
-
-
 class ProfileManager:
     def __init__(self, dotfiles_dir: Path):
         self.dotfiles_dir: Path = dotfiles_dir
-        self.profiles_dir: Path = (
-            self.dotfiles_dir / InternalFileSystemObject.PROFILES.value
-        )
+        self.profiles_dir: Path = self.dotfiles_dir / InternalFileSystemObject.PROFILES.value
 
     def create_profile(self, name: str | None = None):
         if name is None:
@@ -46,18 +30,12 @@ class ProfileManager:
         (self.profiles_dir / name).rmdir()
 
     def list_profiles(self) -> list[str]:
-        return [
-            profile.name for profile in self.profiles_dir.iterdir() if profile.is_dir()
-        ]
+        return [profile.name for profile in self.profiles_dir.iterdir() if profile.is_dir()]
 
     def list_profile_packages(self, name: str) -> list[str]:
         if not self.profile_exists(name):
             raise ProfileNotFoundError(name)
-        return [
-            package.name
-            for package in self.profile_path(name).iterdir()
-            if package.is_dir()
-        ]
+        return [package.name for package in self.profile_path(name).iterdir() if package.is_dir()]
 
     def profile_exists(self, name: str) -> bool:
         return self.profile_path(name).exists()

@@ -7,9 +7,6 @@ from pathlib import Path
 import pytest
 
 from dotman.core.doctor import SymlinkStatus
-
-# Adjust this import to the actual module path where Linker, LinkAction, LinkResult, LinkPair are defined.
-# Example: from dotman.core.linker import Linker, LinkAction, LinkResult, LinkPair
 from dotman.core.linker import LinkAction, Linker, LinkPair, LinkResult, UnlinkResult
 
 
@@ -80,9 +77,7 @@ def test_resolve_returns_absolute_source_and_expanded_target(tmp_path: Path):
     assert target_expanded == target.expanduser()
 
 
-@pytest.mark.parametrize(
-    "setup", ["linked_same", "linked_other", "file_exists", "missing"]
-)
+@pytest.mark.parametrize("setup", ["linked_same", "linked_other", "file_exists", "missing"])
 def test_analyze_various_states(tmp_path: Path, setup: str):
     home = tmp_path / "home"
     home.mkdir()
@@ -324,9 +319,7 @@ def test_dry_run(tmp_dirs: tuple[Path, Path]) -> None:
     assert not target.exists()
 
 
-def test_error_handling(
-    tmp_dirs: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_error_handling(tmp_dirs: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch) -> None:
     home, backup = tmp_dirs
     source: Path = home / "source.txt"
     source.write_text("hello")
