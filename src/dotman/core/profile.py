@@ -1,26 +1,12 @@
 from pathlib import Path
 
 from dotman.core.config.config import InternalFileSystemObject
-from dotman.core.get_internal_data import InternalData
 from dotman.core.linker import LinkPair
 from dotman.errors.profile_errors import (
     DirNotEmptyError,
     ProfileAlreadyExistsError,
     ProfileNotFoundError,
 )
-
-
-class ProfileState:
-    @staticmethod
-    def get_current_profile(meta_path: Path | None = None) -> str | None:
-        load = InternalData.load(file_path=meta_path)
-        return load.current_profile
-
-    @staticmethod
-    def set_current_profile(name: str, meta_path: Path | None = None) -> None:
-        load = InternalData.load(file_path=meta_path)
-        load.current_profile = name
-        load.save()
 
 
 class ProfileManager:

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from dotman.core.config.config import DotmanConfig, InternalFileSystemObject
-from dotman.core.get_internal_data import InternalData, InternalDataArguments
+from dotman.core.get_internal_data import DotmanMetadata, DotmanMetadataField
 from dotman.core.utils.fs import FileSystemUtil
 from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
 
@@ -93,14 +93,14 @@ class RemoveService:
 
     @staticmethod
     def _get_profile_path(dotfiles_dir: Path) -> Path:
-        current_profile = InternalData.load().current_profile
+        current_profile = DotmanMetadata.load().current_profile
 
         if current_profile is None:
-            raise ProfileMetaDataFileCorruptedError(InternalDataArguments.CURRENT_PROFILE)
+            raise ProfileMetaDataFileCorruptedError(DotmanMetadataField.CURRENT_PROFILE)
 
         profile: Path = dotfiles_dir / InternalFileSystemObject.PROFILES.value / current_profile
         if not profile.exists():
-            raise ProfileMetaDataFileCorruptedError(InternalDataArguments.CURRENT_PROFILE, False)
+            raise ProfileMetaDataFileCorruptedError(DotmanMetadataField.CURRENT_PROFILE, False)
 
         return profile
 

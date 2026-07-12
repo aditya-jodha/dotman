@@ -1,6 +1,7 @@
 import shutil
 import time
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 
 from dotman.core.doctor import Doctor, SymlinkStatus
@@ -13,7 +14,7 @@ class LinkPair:
     target: Path
 
 
-class LinkAction:
+class LinkAction(StrEnum):
     SKIP = "skip"
     LINK = "link"
     BACKUP_AND_LINK = "backup_and_link"

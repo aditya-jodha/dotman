@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from dotman.core.config.config import DotmanConfig, InternalFileSystemObject
-from dotman.core.get_internal_data import InternalData, InternalDataArguments
+from dotman.core.config.constants import DOTMAN_BACKUP_DIR
+from dotman.core.get_internal_data import DotmanMetadata, DotmanMetadataField
 from dotman.core.linker import Linker, LinkResult
 from dotman.errors.custom_errors import InvalidPackageNameError, PackageNotExistsError
 from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
@@ -13,14 +14,14 @@ class SyncService:
         cgf = DotmanConfig.load()
         self.home_dir = cgf.home_dir
         self.dotfiles_dir = cgf.dotfiles_dir
-        self.backup_dir = self.home_dir / ".dotman_backup"
-        self.internaldata: InternalData = InternalData.load()
-        self.profile = self.internaldata.current_profile
+        self.backup_dir = self.home_dir / DOTMAN_BACKUP_DIR
+        self.metadata: DotmanMetadata = DotmanMetadata.load()
+        self.profile = self.metadata.current_profile
 
     def initilize_package(self, package: str | None):
         if self.profile is None:
             raise ProfileMetaDataFileCorruptedError(
-                InternalDataArguments.CURRENT_PROFILE, profile_exists=False
+                DotmanMetadataField.CURRENT_PROFILE, profile_exists=False
             )
 
         if package is None:

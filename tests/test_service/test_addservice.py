@@ -17,7 +17,7 @@ def setup_addservice(tmp_path: Path):
     with (
         patch("dotman.core.config.config.DotmanConfig.load") as mock_load,
         patch("dotman.core.get_internal_data.resolve_profile") as mock_resolve,
-        patch("dotman.core.get_internal_data.InternalData.load") as mock_internal,
+        patch("dotman.core.get_internal_data.DotmanMetadata.load") as mock_internal,
     ):
         mock_load.return_value = MagicMock(home_dir=tmp_path, dotfiles_dir=tmp_path)
         mock_resolve.return_value = "default"
