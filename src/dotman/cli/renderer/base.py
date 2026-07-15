@@ -1,5 +1,5 @@
-from abc import ABC, abstractmethod
 from enum import StrEnum
+from typing import Protocol
 
 from dotman.errors.dotman_error import ErrorPayload
 
@@ -10,9 +10,7 @@ class OutputFormat(StrEnum):
     PLAIN = "plain"
 
 
-class OutputRenderer(ABC):
+class OutputRenderer(Protocol):
     """Strategy abstract base class for output boundaries."""
 
-    @abstractmethod
-    def render(self, payload: ErrorPayload) -> None:
-        raise NotImplementedError
+    def render(self, payload: ErrorPayload) -> None: ...

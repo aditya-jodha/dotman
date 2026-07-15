@@ -2,10 +2,8 @@ import sys
 
 from dotman.errors.dotman_error import ErrorPayload
 
-from .base import OutputRenderer
 
-
-class PlainRenderer(OutputRenderer):
+class PlainRenderer:
     """Minimal text stream fallback for simple shell utilities."""
 
     def render(self, payload: ErrorPayload) -> None:

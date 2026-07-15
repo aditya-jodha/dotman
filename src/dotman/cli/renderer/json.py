@@ -3,10 +3,8 @@ import sys
 
 from dotman.errors.dotman_error import ErrorPayload
 
-from .base import OutputRenderer
 
-
-class JsonRenderer(OutputRenderer):
+class JsonRenderer:
     """Machine-readable pipeline output stream."""
 
     def render(self, payload: ErrorPayload) -> None:
