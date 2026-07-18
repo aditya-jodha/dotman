@@ -3,10 +3,8 @@ from rich.panel import Panel
 
 from dotman.errors.dotman_error import ErrorPayload
 
-from .base import OutputRenderer
 
-
-class RichRenderer(OutputRenderer):
+class RichRenderer:
     """Human-friendly high-fidelity terminal UI."""
 
     def __init__(self):
