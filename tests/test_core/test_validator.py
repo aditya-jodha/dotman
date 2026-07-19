@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import pytest
 from pytest import MonkeyPatch
 
+import dotman.core.config.config as config
 import dotman.core.validator as validator
 from dotman.errors.validator_errors import (
     DotmanMetadataFileCorruptedError,
@@ -139,11 +140,14 @@ def test_call_executes_all_validate_and_ensure_methods(tmp_path: Path):
     assert "h" not in v.called
 
 
-def test_require_initialized_decorator_calls_validator(monkeypatch: MonkeyPatch):
-    # patch DotmanValidator.validate_initialized to record calls or raise
+def test_require_initialized_decorator_calls_validator(monkeypatch, tmp_path):
+    dummy_cfg = config.DotmanConfig(home_dir=tmp_path, dotfiles_dir=tmp_path / "dotfiles")
+    monkeypatch.setattr(
+        config.DotmanConfig, "load", classmethod(lambda _cls, _path=None: dummy_cfg)
+    )
+
     called = {"count": 0}
 
-    # must accept self because it's an instance method
     def fake_validate(self):
         called["count"] += 1
 
@@ -153,7 +157,6 @@ def test_require_initialized_decorator_calls_validator(monkeypatch: MonkeyPatch)
     def target(a, b=1):
         return a + b
 
-    # decorator should call validator before executing function
     assert target(2, b=3) == 5
     assert called["count"] == 1
 
@@ -175,10 +178,15 @@ def test_require_initialized_decorator_calls_validator(monkeypatch: MonkeyPatch)
     assert executed["ran"] is False
 
 
-def test_require_profile_decorator_calls_validator(monkeypatch: MonkeyPatch):
+def test_require_profile_decorator_calls_validator(monkeypatch, tmp_path):
+    # Patch DotmanConfig.load to return a valid instance
+    dummy_cfg = config.DotmanConfig(home_dir=tmp_path, dotfiles_dir=tmp_path / "dotfiles")
+    monkeypatch.setattr(
+        config.DotmanConfig, "load", classmethod(lambda _cls, _path=None: dummy_cfg)
+    )
+
     called = {"count": 0}
 
-    # must accept self because it's an instance method
     def fake_ensure(self):
         called["count"] += 1
 

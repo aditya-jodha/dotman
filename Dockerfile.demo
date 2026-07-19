@@ -1,0 +1,57 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# ----------------------------------------------------------
+# System packages
+# ----------------------------------------------------------
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    zsh \
+    tree \
+    sudo \
+    ca-certificates \
+    locales \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# ----------------------------------------------------------
+# Locale
+# ----------------------------------------------------------
+RUN locale-gen en_US.UTF-8
+
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+
+# ----------------------------------------------------------
+# Install uv (system-wide)
+# ----------------------------------------------------------
+RUN curl -LsSf https://astral.sh/uv/install.sh \
+    | env UV_INSTALL_DIR=/usr/local/bin sh
+
+# ----------------------------------------------------------
+# Create demo user
+# ----------------------------------------------------------
+RUN useradd -ms /bin/zsh demo \
+    && usermod -aG sudo demo \
+    && echo "demo ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# ----------------------------------------------------------
+# Minimal shell
+# ----------------------------------------------------------
+RUN cat >/home/demo/.zshrc <<'EOF'
+export PS1='%~ ❯ '
+autoload -Uz colors && colors
+EOF
+
+RUN chown demo:demo /home/demo/.zshrc
+
+# ----------------------------------------------------------
+# Workspace
+# ----------------------------------------------------------
+WORKDIR /workspace
+
+USER demo
+
+CMD ["zsh"]

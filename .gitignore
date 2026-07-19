@@ -2,8 +2,6 @@
 __pycache__/
 *.py[ocd]
 
-commit
-
 # Build & packaging
 build/
 dist/
@@ -20,7 +18,6 @@ htmlcov/
 
 .DS_Store
 
-assets
 # Virtual environments
 .venv/
 .env/
