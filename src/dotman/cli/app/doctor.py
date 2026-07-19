@@ -2,24 +2,22 @@ from rich.console import Console
 from rich.progress import Progress
 from rich.table import Table
 
+from dotman import Dotman
 from dotman.core.doctor import DoctorStatus, SummeryReport
-from dotman.core.service.doctor_service import DoctorService
 
 console = Console()
 
 
 # This is the main connector for the doctor command
 def doctor(detail: bool):
-    service = DoctorService(detail=detail)
-    service.load()
-
     table = Table(title="System Doctor Status Report", show_lines=True)
 
     table.add_column("Check Name", justify="left", style="cyan", no_wrap=True)
     table.add_column("Status", justify="center", no_wrap=True)
     table.add_column("Message", justify="left", style="white")
 
-    checks, report = service.run()
+    checks, report = Dotman().doctor(detail=detail)
+
     for check in checks:
         if check.status == DoctorStatus.OK:
             status_style = f"[bold green]{check.status.value}[/bold green]"
