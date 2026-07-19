@@ -28,7 +28,7 @@
 </div>
 
 ```
-     _________________
+     -----------------
     |                 |
     |                 |
     |                 |
@@ -53,65 +53,73 @@
 
 </div>
 
+
+
+https://github.com/user-attachments/assets/e07f0579-8d2d-42e5-bc16-0a537472da9c
+
+
+## Why Dotman
+
+Managing dotfiles across multiple machines quickly becomes messy.
+
+Dotman provides a predictable workflow for organizing configuration
+files, previewing changes before they happen, synchronizing symlinks,
+and switching between multiple profiles safely.
+
 ______________________________________________________________________
 
-### 🚀 Features
+## ✨ Features
 
-______________________________________________________________________
+- **Multiple Profiles**: Manage separate configurations seamlessly.
+- **Automatic Symlink Management**: Handles path linking without manual intervention.
+- **Safe Rollback**: Revert changes safely if things go wrong.
+- **Package Organization**: Keep everything structured and neat.
+- **Doctor Diagnostics**: Instantly troubleshoot environmental errors.
+- **Rich CLI Output**: Beautiful, readable terminal interfaces.
+- **JSON Output for Automation**: Parse and pipe data into other scripts effortlessly.
+- **Strongly Typed Configuration**: Validated out-of-the-box via Pydantic models.
 
-### Profile-Based Dotfile Management
+---
 
-Manage completely separate environments.
+🧪 **190+ Tests Passing**
 
-## 🏗️ Project Structure
+---
 
-Below is the organizational layout of the repository:
+# Installation
 
-```mermaid
-graph LR
-    %% Core Nodes
-    Root{"📂 profiles/ <br> <sub>Root Directory</sub>"}
-    Pers("📁 personal/ <br> <sub>Private configurations</sub>")
-    Work("📁 work/ <br> <sub>Enterprise environments</sub>")
-    Serv("📁 server/ <br> <sub>Self-hosted deployment</sub>")
+## Using `uv` (Recommended)
 
-    %% Connections
-    Root ---> Pers
-    Root ---> Work
-    Root ---> Serv
+Install `uv` (if you don't already have it):
 
-    %% Premium Styling
-    style Root fill:#1f6feb,stroke:#58a6ff,stroke-width:2px,color:#fff
-    classDef folder fill:#21262d,stroke:#30363d,stroke-width:1px,color:#c9d1d9;
-    class Pers,Work,Serv folder;
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-> Switch between profiles seamlessly.
+Run Dotman instantly without installing:
 
-create a profile:
-
-```console
-$ dotman profile create personal
+```bash
+uvx --from git+https://github.com/aditya-jodha/dotman.git dotman --help
 ```
 
-Switch between profiles seamlessly:
+Or install it globally:
 
-- Dotman automatically:
-  1. Unlinks files from the active profile
-  1. Updates profile metadata
-  1. Links files from the new profile
+```bash
+uv tool install git+https://github.com/aditya-jodha/dotman.git
+```
 
-```console
-$ dotman profile use work
-Switched to profile: work
+Verify the installation:
 
-                                                                Profile Action Log (work)
-┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┓
-┃ Operation ┃ Source Path                                            ┃ Target Path                                ┃     Status     ┃ Details             ┃
-┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━┩
-│ Unlink    │ /tmp/dotman-lab/dotfiles/profiles/personal/nvim/.conf… │ /tmp/dotman-lab/home/.config/nvim/init.vim │ missing_target │ Not Removed         │
-│ Link      │ /private/tmp/dotman-lab/dotfiles/profiles/work/git/.g… │ /tmp/dotman-lab/home/.gitignore            │       ok       │ linked successfully │
-└───────────┴────────────────────────────────────────────────────────┴────────────────────────────────────────────┴────────────────┴─────────────────────┘
+```bash
+dotman --help
+```
+
+## From Source
+
+```bash
+git clone https://github.com/aditya-jodha/dotman.git
+cd dotman
+uv sync
+uv run dotman --help
 ```
 
 ______________________________________________________________________
@@ -119,20 +127,6 @@ ______________________________________________________________________
 ### Safe File Addition
 
 Add existing configuration files into Dotman's managed storage.
-
-```console
-$ dotman add home/.config/nvim --package nvim
-Package not found created new package
-File '/private/tmp/dotman-lab/home/.config/nvim' added to package 'nvim' successfully.
-Please review the changes and if everything looks good then you can commit the changes.
-✨  personal
-┗━━ 📂 nvim
-    ┗━━ 📂 .config
-        ┗━━ 📂 nvim
-            ┗━━ 📄 init.vim
-None
-Press (y) to commit the changes or (n) to restore the files: Changes committed successfully.
-```
 
 Dotman:
 
@@ -158,26 +152,6 @@ ______________________________________________________________________
 ### Doctor Command
 
 Diagnose broken or incorrect symlinks.
-
-```console
-$ dotman doctor --all
-                                            System Doctor Status Report
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Check Name                   ┃ Status ┃ Message                                                                  ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ Dotfiles Directory           │   ok   │ Dotfiles directory '/tmp/dotman-lab/dotfiles' is valid.                  │
-├──────────────────────────────┼────────┼──────────────────────────────────────────────────────────────────────────┤
-│ Permissions                  │   ok   │ Permissions look fine.                                                   │
-├──────────────────────────────┼────────┼──────────────────────────────────────────────────────────────────────────┤
-│ Permissions                  │   ok   │ Permissions look fine.                                                   │
-├──────────────────────────────┼────────┼──────────────────────────────────────────────────────────────────────────┤
-│ tmux:.config/.tmux/tmux.conf │  warn  │ Missing target: '/tmp/dotman-lab/home/.config/.tmux/tmux.conf' entirely. │
-├──────────────────────────────┼────────┼──────────────────────────────────────────────────────────────────────────┤
-│ git:.gitignore               │   ok   │ Link OK: '/tmp/dotman-lab/home/.gitignore'.                              │
-└──────────────────────────────┴────────┴──────────────────────────────────────────────────────────────────────────┘
-Doctor Summary... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00
-OK: 4 | WARN: 1 | ERROR: 0
-```
 
 Checks include:
 
@@ -211,51 +185,7 @@ uv run pytest
 Current status:
 
 ```text
-146 passed in 1.39s
-```
-
-______________________________________________________________________
-
-## Installation
-
-### Install from **`uv`** package manager (Recommended):
-
-- Install `uv` from [Astral Shell](https://astral.sh/uv)
-
-  ```bash
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-  ```
-
-- Run Dotman instantly with **uvx** (no local install required):
-
-  ```bash
-  uvx --from git+https://github.com/aditya-jodha/dotman.git dotman --help
-  ```
-
-- If you prefer to install it globally to your environment:
-
-  ```bash
-  uv tool install git+https://github.com/aditya-jodha/dotman.git
-  dotman --help
-  ```
-
-### Install from source (Traditional):
-
-```bash
-git clone https://github.com/your-username/dotman.git
-cd dotman
-```
-
-Install dependencies:
-
-```bash
-uv sync
-```
-
-Run:
-
-```bash
-uv run dotman --help
+191 passed in 1.49s
 ```
 
 ______________________________________________________________________
@@ -290,29 +220,7 @@ ______________________________________________________________________
 
 ## How dotman Works
 
-- Dotman uses a simple directory structure to manage dotfiles.
-
-- And make symlink on the spot while seeing the directory structure.
-
-  ```text
-  dotfiles/
-  ├── metadata.yml
-  └── profiles
-      ├── personal
-      │   ├── git
-      │   │   └── .gitconfig
-      │   └── nvim
-      │       └── .config
-      │           └── nvim
-      │               └── init.vim
-      │               └── plug.vim
-      │
-      └── work
-          ├── bash
-          │   └── .bash_profile
-          └── tmux
-              └── .tmux.conf
-  ```
+Read the [Architecture.md](ARCHITECTURE.md) for a detailed explanation of the internal workings of Dotman.
 
 ______________________________________________________________________
 
@@ -374,64 +282,37 @@ For better understanding of the architecture, please refer to [Architecture.md](
 
 ______________________________________________________________________
 
-User can change the dotfiles folder name by editing the `config.py` file or leave this task to dotman.
+User can change the dotfiles folder name by editing the `config.py` file or leave this task to dotman by using the `dotman config` command.
 
-```console
-$ dotman config
-dotfiles_dir: /tmp/dotman-lab/dotfiles
-home_dir: /tmp/dotman-lab/home
+When a user updates the configuration via the dotman config command, dotman automatically validates the input keys and data.
+- Valid input: dotman updates the configuration file with the new data.
+- Invalid input: dotman rejects the changes, aborts the update, and displays a detailed error message.
 
-You can change your config file path via `CONFIG_ENV_VAR environment` variable. Default is `~/.config/dotman/config.yml`
-
-$ dotman config set dotfiles_dir my_fav_name
-You can change your config file path via `CONFIG_ENV_VAR environment` variable. Default is `~/.config/dotman/config.yml`
-Updated dotfiles_dir to my_fav_name
-
-$ dotman config
-dotfiles_dir: my_fav_name
-home_dir: /tmp/dotman-lab/home
-
-You can change your config file path via `CONFIG_ENV_VAR environment` variable. Default is `~/.config/dotman/config.yml`
-```
-
-> Note: Assuming that user gave the absolute path of the dotfiles folder.
+> [!CAUTION] 
+> If user modifies the configuration file manually, dotman will  validate the changes at runtime and may lead to unexpected behavior in some commands.
 
 ## Roadmap
 
 ### Completed
 
 - [x] Dotfile management
-- [x] Package support
 - [x] Sync command
 - [x] Doctor command
 - [x] Profile management
 - [x] Profile switching
 - [x] Automated testing
+- [x] Package removal command
+- [x] Configuration file support
 
 ### Planned
 
+- [ ] Package management
+- [ ] Plugin system
 - [ ] Profile export/import
-- [ ] Configuration file support
-- [ ] Windows support
-- [ ] Package removal command
 - [ ] Dry-run mode improvements
+- [ ] Windows support
 
 ______________________________________________________________________
-
-## Why I Built Dotman
-
-Dotman started as a learning project.
-
-The goal was not just to create another dotfile manager, but to understand how real command-line applications are designed:
-
-- filesystem operations
-- symlink management
-- testing
-- service architecture
-- error handling
-- CLI design
-
-Over time it evolved into a fully tested tool capable of managing multiple environments safely.
 
 <div>
     <div align="Right">

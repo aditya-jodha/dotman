@@ -10,6 +10,7 @@ from dotman.errors.validator_errors import (
 )
 
 
+# TODO: Change the input to DotmanConfig
 class DotmanValidator:
     def __init__(self, dotfiles_dir: Path | None = None, home_dir: Path | None = None) -> None:
         cgf = DotmanConfig.load()
