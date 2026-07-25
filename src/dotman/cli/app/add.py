@@ -6,7 +6,7 @@ from typing import Any
 
 from rich.console import Console
 
-from dotman.core.service.add_service import AddService
+from dotman import Dotman
 
 console = Console()
 
@@ -47,12 +47,9 @@ def add(
         console.print("Package name is required to add a file.", style="red")
         return
 
-    add_service = AddService(
-        file=file,
-        package=package_name,
-    )
+    operation = Dotman().add(file, package_name)
 
-    preview = add_service.preview()
+    preview = operation.preview()
 
     for warn in preview.warnings:
         console.print(warn, style="yellow")
@@ -66,8 +63,8 @@ def add(
     else:
         console.print("Package exists, reusing it", style="dim green")
 
-    add_service.add()
-    console.print(add_service.tree())
+    operation.add()
+    console.print(operation.tree())
 
     console.print("Press (y) to commit or (n) to rollback: ", style="yellow", end="")
     try:
@@ -76,8 +73,8 @@ def add(
         choice = False
 
     if choice:
-        add_service.commit()
+        operation.commit()
         console.print("Changes committed successfully.", style="green")
     else:
-        add_service.rollback_changes()
+        operation.rollback_changes()
         console.print("Files restored successfully.", style="yellow")
