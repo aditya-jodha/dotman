@@ -24,6 +24,15 @@ def make_responses(seq: Iterator[str]):
     return responder
 
 
+@pytest.fixture
+def fake_dotman(monkeypatch: MonkeyPatch):
+    fake = MagicMock()
+    fake.add.return_value.preview.return_value.warnings = ["warn1"]
+    fake.add.return_value.preview.return_value.package_created = True
+    monkeypatch.setattr("dotman.cli.app.add.Dotman", lambda: fake)
+    return fake
+
+
 class TestHelperFunctions:
     @staticmethod
     def test_get_user_choice_yes(monkeypatch: MonkeyPatch):
@@ -137,77 +146,119 @@ def test_add_with_warnings_and_cancel(tmp_path: Path, monkeypatch: MonkeyPatch):
     file = tmp_path / "f.txt"
     file.write_text("hello")
 
-    fake_service = MagicMock()
-    fake_service.preview.return_value.warnings = ["warn1"]
-    fake_service.preview.return_value.package_created = False
+    fake_operation = MagicMock()
+    fake_operation.preview.return_value.warnings = ["warn1"]
+    fake_operation.preview.return_value.package_created = False
 
-    monkeypatch.setattr(cli, "AddService", lambda file, package: fake_service)
+    fake_dotman = MagicMock()
+    fake_dotman.add.return_value = fake_operation
+
+    monkeypatch.setattr(cli, "Dotman", lambda: fake_dotman)
     monkeypatch.setattr(cli, "get_user_choice", lambda: False)
 
     with patch.object(cli.console, "print") as mock_print:
-        cli.add(file, "pkg")
-        mock_print.assert_any_call("Operation cancelled by user.", style="red")
-    fake_service.add.assert_not_called()
+        cli.add(file, "mypkg")
+
+    mock_print.assert_any_call("Operation cancelled by user.", style="red")
+    fake_operation.add.assert_not_called()
+    fake_operation.commit.assert_not_called()
+    fake_operation.rollback_changes.assert_not_called()
 
 
-def test_add_with_warnings_and_continue_commit(tmp_path: Path, monkeypatch: MonkeyPatch):
+def test_add_with_warnings_and_continue_commit(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+):
     file = tmp_path / "f.txt"
     file.write_text("hello")
 
-    fake_service = MagicMock()
-    fake_service.preview.return_value.warnings = ["warn1"]
-    fake_service.preview.return_value.package_created = True
-    fake_service.tree.return_value = "TREE"
+    fake_operation = MagicMock()
+    fake_operation.preview.return_value.warnings = ["warn1"]
+    fake_operation.preview.return_value.package_created = True
+    fake_operation.tree.return_value = "TREE"
 
-    monkeypatch.setattr(cli, "AddService", lambda file, package: fake_service)
-    monkeypatch.setattr(cli, "get_user_choice", lambda: True)
+    fake_dotman = MagicMock()
+    fake_dotman.add.return_value = fake_operation
 
-    with patch.object(cli.console, "print") as mock_print:
-        cli.add(file, "pkg")
-        # Should commit
-        fake_service.add.assert_called_once()
-        fake_service.commit.assert_called_once()
-        mock_print.assert_any_call("Changes committed successfully.", style="green")
+    monkeypatch.setattr(cli, "Dotman", lambda: fake_dotman)
 
-
-def test_add_with_no_warnings_and_rollback(tmp_path: Path, monkeypatch: MonkeyPatch):
-    file = tmp_path / "f.txt"
-    file.write_text("hello")
-
-    fake_service = MagicMock()
-    fake_service.preview.return_value.warnings = []
-    fake_service.preview.return_value.package_created = False
-    fake_service.tree.return_value = "TREE"
-
-    monkeypatch.setattr(cli, "AddService", lambda file, package: fake_service)
-    # First choice not needed (no warnings), second choice = False
-    choices = iter([False])
+    choices = iter([True, True])
     monkeypatch.setattr(cli, "get_user_choice", lambda: next(choices))
 
     with patch.object(cli.console, "print") as mock_print:
-        cli.add(file, "pkg")
-        fake_service.add.assert_called_once()
-        fake_service.rollback_changes.assert_called_once()
-        mock_print.assert_any_call("Files restored successfully.", style="yellow")
+        cli.add(file, "mypkg")
+
+    fake_operation.add.assert_called_once()
+    fake_operation.commit.assert_called_once()
+    fake_operation.rollback_changes.assert_not_called()
+
+    mock_print.assert_any_call(
+        "Changes committed successfully.",
+        style="green",
+    )
 
 
-def test_add_keyboard_interrupt_on_commit(tmp_path: Path, monkeypatch: MonkeyPatch):
+def test_add_with_no_warnings_and_rollback(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+):
     file = tmp_path / "f.txt"
     file.write_text("hello")
 
-    fake_service = MagicMock()
-    fake_service.preview.return_value.warnings = []
-    fake_service.preview.return_value.package_created = False
-    fake_service.tree.return_value = "TREE"
+    fake_operation = MagicMock()
+    fake_operation.preview.return_value.warnings = []
+    fake_operation.preview.return_value.package_created = False
+    fake_operation.tree.return_value = "TREE"
 
-    monkeypatch.setattr(cli, "AddService", lambda file, package: fake_service)
+    fake_dotman = MagicMock()
+    fake_dotman.add.return_value = fake_operation
 
-    def fake_choice():
-        raise KeyboardInterrupt
-
-    monkeypatch.setattr(cli, "get_user_choice", fake_choice)
+    monkeypatch.setattr(cli, "Dotman", lambda: fake_dotman)
+    monkeypatch.setattr(cli, "get_user_choice", lambda: False)
 
     with patch.object(cli.console, "print") as mock_print:
-        cli.add(file, "pkg")
-        fake_service.rollback_changes.assert_called_once()
-        mock_print.assert_any_call("Files restored successfully.", style="yellow")
+        cli.add(file, "mypkg")
+
+    fake_operation.add.assert_called_once()
+    fake_operation.commit.assert_not_called()
+    fake_operation.rollback_changes.assert_called_once()
+
+    mock_print.assert_any_call(
+        "Files restored successfully.",
+        style="yellow",
+    )
+
+
+def test_add_keyboard_interrupt_on_commit(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+):
+    file = tmp_path / "f.txt"
+    file.write_text("hello")
+
+    fake_operation = MagicMock()
+    fake_operation.preview.return_value.warnings = []
+    fake_operation.preview.return_value.package_created = False
+    fake_operation.tree.return_value = "TREE"
+
+    fake_dotman = MagicMock()
+    fake_dotman.add.return_value = fake_operation
+
+    monkeypatch.setattr(cli, "Dotman", lambda: fake_dotman)
+
+    def raise_keyboard_interrupt():
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(cli, "get_user_choice", raise_keyboard_interrupt)
+
+    with patch.object(cli.console, "print") as mock_print:
+        cli.add(file, "mypkg")
+
+    fake_operation.add.assert_called_once()
+    fake_operation.commit.assert_not_called()
+    fake_operation.rollback_changes.assert_called_once()
+
+    mock_print.assert_any_call(
+        "Files restored successfully.",
+        style="yellow",
+    )

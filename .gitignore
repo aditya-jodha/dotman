@@ -30,3 +30,4 @@ assets
 .idea/
 
 *.logcoverage.xml
+*.xml

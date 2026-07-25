@@ -1,3 +1,7 @@
+from pathlib import Path
+
+from dotman.core.service.add_service import AddOperation
+
 from .core.config.config import DotmanConfig
 from .core.get_internal_data import DotmanMetadata
 from .core.service.doctor_service import DoctorService
@@ -6,9 +10,13 @@ from .core.service.doctor_service import DoctorService
 class Dotman:
     __slots__ = ("config", "metadata")
 
-    def __init__(self):
-        self.config = DotmanConfig.load()
-        self.metadata = DotmanMetadata.load()
+    def __init__(
+        self,
+        config: DotmanConfig | None = None,
+        metadata: DotmanMetadata | None = None,
+    ):
+        self.config = config or DotmanConfig.load()
+        self.metadata = metadata or DotmanMetadata.load()
 
     def refresh(self):
         self.metadata = DotmanMetadata.load()
@@ -34,3 +42,12 @@ class Dotman:
             config=self.config,
         )
         return service.execute().run_all()
+
+    def add(self, file: Path, package: str):
+        return AddOperation(
+            file=file,
+            package=package,
+            home_dir=self.config.home_dir,
+            dotfiles_dir=self.config.dotfiles_dir,
+            profile=self.metadata.current_profile_or_raise(),
+        )

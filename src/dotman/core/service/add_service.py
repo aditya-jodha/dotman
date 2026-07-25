@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from dotman.cli.common_func import sanitize_package_name
 from dotman.cli.tree_builder import print_beautiful_directory
 from dotman.core.add import AddFiles, RollbackJournal, SymlinkCheck, SymlinkStatus
-from dotman.core.config.config import DotmanConfig
 from dotman.core.get_internal_data import DotmanMetadata
 
 if TYPE_CHECKING:
@@ -19,18 +18,17 @@ class Preview:
     package_created: bool
 
 
-class AddService:
+class AddOperation:
     def __init__(
         self,
         file: Path,
         package: str,
-        home_dir: Path | None = None,
-        dotfiles_dir: Path | None = None,
-        profile: str | None = None,
+        home_dir: Path,
+        dotfiles_dir: Path,
+        profile: str,
     ) -> None:
-        config = DotmanConfig.load()
-        self.home_dir = home_dir or config.home_dir
-        self.dotfiles_dir = dotfiles_dir or config.dotfiles_dir
+        self.home_dir = home_dir
+        self.dotfiles_dir = dotfiles_dir
 
         self.journal = RollbackJournal()
         self.internal_data: DotmanMetadata = DotmanMetadata.load()
@@ -38,7 +36,7 @@ class AddService:
         self.file = file
         self.package: str = sanitize_package_name(package)
 
-        self.profile = profile or self.internal_data.current_profile_or_raise()
+        self.profile = profile
 
         self.add_files = AddFiles(
             file=self.file,
