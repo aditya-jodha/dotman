@@ -16,7 +16,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from dotman.core.config.config import DotmanConfig, InternalFileSystemObject
-from dotman.errors.config_errors import DotmanConfigParseError, InvalidConfigFileError
+from dotman.errors.config_errors import ConfigParseError, InvalidConfigFileError
 from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
 
 
@@ -75,7 +75,7 @@ class DotmanMetadata(BaseModel):
                 },
             )
         except yaml.YAMLError as e:
-            raise DotmanConfigParseError(file_path, e) from e
+            raise ConfigParseError(file_path, e) from e
         except ValidationError as e:
             raise InvalidConfigFileError(path=file_path, error=e) from e
 

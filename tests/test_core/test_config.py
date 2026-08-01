@@ -11,7 +11,7 @@ from dotman.core.config.config import (
     get_temp_log_file,
 )
 from dotman.errors.config_errors import (
-    DotmanConfigParseError,
+    ConfigParseError,
     InvalidConfigFileError,
     InvalidConfigKeyError,
     InvalidConfigValueError,
@@ -82,7 +82,7 @@ class TestDotmanConfig:
     def test_load_yaml_error(self, tmp_path: Path):
         path = tmp_path / "bad.yml"
         path.write_text(":\n:bad_yaml")
-        with pytest.raises(DotmanConfigParseError):
+        with pytest.raises(ConfigParseError):
             DotmanConfig.load(path)
 
     def test_load_validation_error(self, tmp_path: Path):

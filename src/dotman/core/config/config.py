@@ -17,7 +17,7 @@ from dotman.core.config.constants import (
     DEFAULT_HOME_DIR,
 )
 from dotman.errors.config_errors import (
-    DotmanConfigParseError,
+    ConfigParseError,
     InvalidConfigFileError,
     InvalidConfigKeyError,
     InvalidConfigValueError,
@@ -90,7 +90,7 @@ class DotmanConfig(BaseModel):
             return cls.model_validate(data)
 
         except yaml.YAMLError as e:
-            raise DotmanConfigParseError(config_path, e) from e
+            raise ConfigParseError(config_path, e) from e
 
         except ValidationError as e:
             raise InvalidConfigFileError(path=config_path, error=e) from e

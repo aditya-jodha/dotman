@@ -1,3 +1,18 @@
-from dotman.api import Dotman
+from importlib.metadata import PackageNotFoundError, metadata, version
 
-__all__ = ["Dotman"]
+from dotman.api import Dotman
+from dotman.core.config.constants import DOTMAN
+from dotman.plugin.api import DotmanPlugin
+
+try:
+    pkg_metadata = metadata(DOTMAN)
+    __author__ = pkg_metadata.get("Author", "Unknown Author")
+    __version__ = version(DOTMAN)
+except PackageNotFoundError:
+    __version__ = "0.0.0"
+
+
+__all__ = [
+    "Dotman",
+    "DotmanPlugin",
+]

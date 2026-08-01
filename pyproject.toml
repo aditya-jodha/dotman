@@ -8,6 +8,7 @@ authors = [
   { name = "Aditya Pratap Singh Rathore" }
 ]
 dependencies = [
+    "dulwich>=1.2.12",
     "pydantic>=2.13.4",
     "pyyaml>=6.0.3",
     "rich>=15.0.0",

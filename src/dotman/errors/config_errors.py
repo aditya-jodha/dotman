@@ -1,11 +1,18 @@
-from dataclasses import dataclass
-from pathlib import Path
+from __future__ import annotations
 
-import yaml
-from pydantic import ValidationError
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
 from yaml.error import MarkedYAMLError
 
 from dotman.errors.dotman_error import ErrorContext, ExitCode, IntegrityError
+
+if TYPE_CHECKING:
+    import tomllib
+    from pathlib import Path
+
+    import yaml
+    from pydantic import ValidationError
 
 
 @dataclass(frozen=True, slots=True)
@@ -14,7 +21,7 @@ class ConfigValidationIssue:
     reason: str
 
     @classmethod
-    def from_validation_error(cls, error: ValidationError) -> list["ConfigValidationIssue"]:
+    def from_validation_error(cls, error: ValidationError) -> list[ConfigValidationIssue]:
         return [
             cls(
                 field=".".join(map(str, err["loc"])),
@@ -31,22 +38,15 @@ class ConfigParseIssue:
     reason: str
 
     @classmethod
-    def from_yaml_error(cls, error: MarkedYAMLError | yaml.YAMLError) -> "ConfigParseIssue":
-        if isinstance(error, MarkedYAMLError):
+    def from_error(cls, error: yaml.YAMLError | tomllib.TOMLDecodeError) -> ConfigParseIssue:
+        if isinstance(error, MarkedYAMLError) and error.problem_mark is not None:
             mark = error.problem_mark
-
-            if mark is not None:
-                return cls(
-                    line=mark.line + 1,
-                    column=mark.column + 1,
-                    reason=error.problem or str(error),
-                )
-
-        return cls(
-            line=None,
-            column=None,
-            reason=str(error),
-        )
+            return cls(
+                line=mark.line + 1,
+                column=mark.column + 1,
+                reason=error.problem or str(error),
+            )
+        return cls(line=None, column=None, reason=str(error))
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,16 +74,13 @@ class InvalidConfigKeyContext(ErrorContext):
     valid_keys: tuple[str, ...]
 
 
-class DotmanConfigParseError(IntegrityError):
+class ConfigParseError(IntegrityError):
     EXIT_CODE = ExitCode.DATA_CORRUPTED
 
-    def __init__(self, path: Path, error: yaml.YAMLError):
+    def __init__(self, path: Path, error: yaml.YAMLError | tomllib.TOMLDecodeError):
         super().__init__(
             f"Failed to parse config file: {path}",
-            context=ConfigParseContext(
-                path=path,
-                issue=ConfigParseIssue.from_yaml_error(error),
-            ),
+            context=ConfigParseContext(path=path, issue=ConfigParseIssue.from_error(error)),
         )
 
 
@@ -130,3 +127,10 @@ class InvalidConfigFileError(IntegrityError):
                 issues=ConfigValidationIssue.from_validation_error(error),
             ),
         )
+
+
+class ConfigFileNotFoundError(IntegrityError):
+    EXIT_CODE = ExitCode.DATA_CORRUPTED
+
+    def __init__(self, path: Path):
+        super().__init__(f"Config file not found: {path}")
