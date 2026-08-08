@@ -1,5 +1,8 @@
 """
-This module is used to get data from internal files.
+This module is used to get data from internal files. from the dotman directory.
+
+The internal files are:
+- The metadata file, which stores the current profile.
 """
 
 from __future__ import annotations
@@ -37,7 +40,7 @@ def resolve_profile(explicit_profile: str | None, internal_data: DotmanMetadata)
     if internal_data.current_profile is not None:
         return internal_data.current_profile
 
-    # If we reach here, both are None → corrupted metadata
+    # If we reach here, both are None -> corrupted metadata
     raise ProfileMetaDataFileCorruptedError(DotmanMetadataField.CURRENT_PROFILE, False)
 
 

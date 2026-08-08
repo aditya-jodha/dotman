@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import tomllib
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from pydantic import ConfigDict, ValidationError
-from pydantic.dataclasses import dataclass
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 from dotman.core.config.constants import DOTMAN, PLUGIN
 from dotman.errors.config_errors import (
@@ -25,7 +26,7 @@ class InstalledPlugin:
     manifest: PluginManifest
 
 
-@dataclass(config=ConfigDict(extra="forbid"))
+@pydantic_dataclass(config=ConfigDict(extra="forbid"))
 class PluginManifest:
     name: str
     version: str

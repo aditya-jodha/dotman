@@ -1,10 +1,11 @@
 from pathlib import Path
 from typing import Final
 
-DEFAULT_HOME_DIR: Final = Path.home()
-DEFAULT_DOTFILES_DIR: Final = DEFAULT_HOME_DIR / ".dotfiles"
+DEFAULT_HOME_DIR: Final[Path] = Path.home()
+DEFAULT_DOTFILES_DIR: Final[Path] = DEFAULT_HOME_DIR / ".dotfiles"
+DEFAULT_PLUGINS_DIR: Final[Path] = DEFAULT_HOME_DIR / ".config/dotman/plugins/"
 
-DEFAULT_CONFIG_PATH: Final = Path.home() / ".config/dotman/config.yml"
+DEFAULT_CONFIG_PATH: Final[Path] = Path.home() / ".config/dotman/config.yml"
 CONFIG_ENV_VAR: Final = "DOTMAN_CONFIG"
 
 

@@ -18,17 +18,25 @@ from dotman.errors.config_errors import (
 )
 
 
-class TestDotmanConfig:
-    def test_save_and_load_roundtrip(self, tmp_path: Path):
-        dot = tmp_path / "dot"
-        home = tmp_path / "home"
-        dot.mkdir()
-        home.mkdir()
+@pytest.fixture
+def cfg(tmp_path: Path) -> DotmanConfig:
+    dot = tmp_path / "dot"
+    home = tmp_path / "home"
+    plugins = tmp_path / "plugins"
 
-        cfg = DotmanConfig(dotfiles_dir=dot, home_dir=home)
+    dot.mkdir()
+    plugins.mkdir()
+    home.mkdir()
+    return DotmanConfig(dotfiles_dir=dot, home_dir=home, plugins_dir=plugins)
+
+
+class TestDotmanConfig:
+    def test_save_and_load_roundtrip(self, tmp_path: Path, cfg: DotmanConfig):
         path = tmp_path / "config.yml"
+
         cfg.save(path)
         loaded = DotmanConfig.load(path)
+
         assert loaded.dotfiles_dir == cfg.dotfiles_dir
         assert loaded.home_dir == cfg.home_dir
 
@@ -44,14 +52,7 @@ class TestDotmanConfig:
         cfg = DotmanConfig.default()
         assert isinstance(cfg, DotmanConfig)
 
-    def test_set_valid_and_invalid_key(self, tmp_path: Path):
-        dot = tmp_path / "dot"
-        home = tmp_path / "home"
-        dot.mkdir()
-        home.mkdir()
-
-        cfg = DotmanConfig(dotfiles_dir=dot, home_dir=home)
-
+    def test_set_valid_and_invalid_key(self, tmp_path: Path, cfg: DotmanConfig):
         # valid update
         new_cfg = cfg.set("dotfiles_dir", tmp_path / "newdot")
         assert new_cfg.dotfiles_dir == tmp_path / "newdot"
@@ -60,14 +61,8 @@ class TestDotmanConfig:
         with pytest.raises(InvalidConfigKeyError):
             cfg.set("badkey", "value")
 
-    def test_set_invalid_value(self, tmp_path: Path):
-        dot = tmp_path / "dot"
-        home = tmp_path / "home"
-        dot.mkdir()
-        home.mkdir()
-
-        cfg = DotmanConfig(dotfiles_dir=dot, home_dir=home)
-        # Pass a string path that exists but is not a directory
+    def test_set_invalid_value(self, tmp_path: Path, cfg: DotmanConfig):
+        # Pass a string path that exists but is not a director
         bad_file = tmp_path / "notadir.txt"
         bad_file.write_text("oops")
 
@@ -103,13 +98,7 @@ class TestInternalFileSystemObject:
 
 
 class TestLogBookDataAndTempFile:
-    def test_logbookdata_and_tempfile(self, tmp_path: Path):
-        dot = tmp_path / "dot"
-        home = tmp_path / "home"
-        dot.mkdir()
-        home.mkdir()
-
-        cfg = DotmanConfig(dotfiles_dir=dot, home_dir=home)
+    def test_logbookdata_and_tempfile(self, cfg: DotmanConfig):
         log_path = get_temp_log_file(cfg)
         assert log_path.parent.name == "tmp"
         lb = LogBookData(original_path=Path("orig"), new_path=Path("new"))

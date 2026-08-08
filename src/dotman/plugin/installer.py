@@ -19,7 +19,7 @@ class PluginInstaller:
 
     def install(self, repository: PluginRepository) -> None:
         """Install a plugin Python package from its repository."""
-        uv_path = self._find_uv()
+        uv_path = self._find_uv
 
         try:
             subprocess.run(  # noqa: S603 - executable resolved via shutil.which()
@@ -42,6 +42,7 @@ class PluginInstaller:
 
     # ===== Helper methods =====
 
+    @property
     def _find_uv(self) -> str:
         """Find the uv executable."""
         uv_path = shutil.which("uv")

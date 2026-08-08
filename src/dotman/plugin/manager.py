@@ -24,19 +24,19 @@ class PluginManager:
     """Handles core lifecycles for plugins including discovery, installation, and updates.
 
     Attributes:
-        plugin_dir: A Path object referencing the central workspace directory
+        plugins_dir: A Path object referencing the central workspace directory
             where plugin code repos are installed and stored.
     """
 
     def __init__(
         self,
-        plugin_dir: Path,
+        plugins_dir: Path,
         installer: PluginInstaller,
     ) -> None:
         self.installer = installer
 
-        self.plugin_dir = plugin_dir
-        self.plugin_dir.mkdir(parents=True, exist_ok=True)
+        self.plugins_dir = plugins_dir
+        self.plugins_dir.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
     def is_git_source(source: str) -> bool:
@@ -64,10 +64,12 @@ class PluginManager:
             False
         """
         path = Path(source)
+
         if path.exists():
-            return path.is_dir()
+            return path.is_dir() and (path / ".git").exists()
 
         parsed = urlparse(source)
+
         return parsed.scheme in {"http", "https", "git", "ssh"} or source.startswith("git@")
 
     @staticmethod
@@ -97,7 +99,7 @@ class PluginManager:
 
         repository = PluginRepository.clone(
             url=source,
-            target_dir=self.plugin_dir / repository_name,
+            target_dir=self.plugins_dir / repository_name,
         )
 
         loader = PluginLoader(repository)
@@ -120,12 +122,12 @@ class PluginManager:
     def list_plugins(self) -> list[InstalledPlugin]:
         plugins: list[InstalledPlugin] = []
 
-        for plugin_dir in self.plugin_dir.iterdir():
-            if not plugin_dir.is_dir():
+        for plugins_dir in self.plugins_dir.iterdir():
+            if not plugins_dir.is_dir():
                 continue
 
             try:
-                repository = PluginRepository(plugin_dir)
+                repository = PluginRepository(plugins_dir)
                 loader = PluginLoader(repository)
                 manifest = loader.load_manifest()
             except PluginRepositoryError:
