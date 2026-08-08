@@ -37,7 +37,7 @@ class DotmanConfig(BaseModel):
     dotfiles_dir: Path
     home_dir: DirectoryPath
 
-    plugins_dir: Path
+    plugins_dir: Path = DEFAULT_PLUGINS_DIR
 
     def save(self, path: Path | None = None) -> None:
         """Save the config to a file."""

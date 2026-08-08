@@ -83,3 +83,12 @@ class InvalidPluginSourceError(IntegrityError):
             f"Invalid plugin source: {source}",
             context=SourceContext(source=source),
         )
+
+
+class PluginNotFoundError(IntegrityError):
+    """Raised when no installed plugin has the requested name."""
+
+    EXIT_CODE = ExitCode.DATA_CORRUPTED
+
+    def __init__(self, name: str):
+        super().__init__(f"Plugin not found: {name}")

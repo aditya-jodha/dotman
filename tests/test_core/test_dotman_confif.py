@@ -9,6 +9,7 @@ from dotman.core.config import config
 from dotman.errors.config_errors import InvalidConfigFileError
 
 
+@pytest.fixture
 def cfg(tmp_path: Path) -> config.DotmanConfig:
     dot = tmp_path / "dot"
     home = tmp_path / "home"

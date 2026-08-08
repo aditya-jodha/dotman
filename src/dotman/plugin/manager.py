@@ -1,3 +1,4 @@
+# ruff: noqa: TRY003
 """
 Module for managing the installation, update, and lifecycle of plugins.
 
@@ -6,12 +7,17 @@ or load them from local system directories, handle manifests, and track
 available plugin states.
 """
 
+import shutil
 from pathlib import Path
 from urllib.parse import urlparse
 
 import typer
 
-from dotman.errors.plugin_errors import InvalidPluginSourceError, PluginRepositoryError
+from dotman.errors.plugin_errors import (
+    InvalidPluginSourceError,
+    PluginNotFoundError,
+    PluginRepositoryError,
+)
 from dotman.plugin.api import PluginAPI
 
 from .installer import PluginInstaller
@@ -31,11 +37,11 @@ class PluginManager:
     def __init__(
         self,
         plugins_dir: Path,
-        installer: PluginInstaller,
+        installer: PluginInstaller | None = None,
     ) -> None:
-        self.installer = installer
+        self.installer = installer or PluginInstaller()
 
-        self.plugins_dir = plugins_dir
+        self.plugins_dir = plugins_dir.resolve()
         self.plugins_dir.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
@@ -97,21 +103,42 @@ class PluginManager:
 
         repository_name = self._repository_name(source)
 
-        repository = PluginRepository.clone(
-            url=source,
-            target_dir=self.plugins_dir / repository_name,
-        )
+        target_dir = self.plugins_dir / repository_name
+        repository = PluginRepository.clone(url=source, target_dir=target_dir)
 
-        loader = PluginLoader(repository)
-        manifest = loader.load_manifest()
-
-        self.installer.install(repository)
+        try:
+            loader = PluginLoader(repository)
+            manifest = loader.load_manifest()
+            self.installer.install(repository)
+        except Exception:
+            shutil.rmtree(target_dir, ignore_errors=True)
+            raise
 
         return manifest
 
-    def uninstall(self, name: str):
+    def uninstall(self, name: str) -> None:
         """Uninstall a plugin."""
-        ...
+        installed_plugin = self._get_installed_plugin(name)
+        repository = installed_plugin.repository
+
+        if repository.path.parent != self.plugins_dir:
+            raise PluginRepositoryError(
+                f"Refusing to remove unmanaged plugin repository: {repository.path}",
+                path=repository.path,
+            )
+
+        distribution_name = (
+            installed_plugin.manifest.distribution_name or installed_plugin.manifest.name
+        )
+        self.installer.uninstall(distribution_name)
+
+        try:
+            shutil.rmtree(repository.path)
+        except OSError as e:
+            raise PluginRepositoryError(
+                f"Failed to remove plugin repository: {repository.path}",
+                path=repository.path,
+            ) from e
 
     def update(self, name: str):
         """Update an installed plugin."""
@@ -142,6 +169,18 @@ class PluginManager:
             )
 
         return plugins
+
+    def _get_installed_plugin(self, name: str) -> InstalledPlugin:
+        """Return the unique installed plugin with the given manifest name."""
+        matches = [plugin for plugin in self.list_plugins() if plugin.manifest.name == name]
+
+        if not matches:
+            raise PluginNotFoundError(name)
+
+        if len(matches) > 1:
+            raise PluginRepositoryError(f"Multiple installed plugins are named: {name}")
+
+        return matches[0]
 
     def load_plugins(self, root_app: typer.Typer) -> None:
         for installed_plugin in self.list_plugins():

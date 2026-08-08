@@ -33,6 +33,7 @@ class PluginManifest:
     description: str
     authors: list[str]
     entry_point: str
+    distribution_name: str | None = None
     api_version: str = "1"
 
     @classmethod

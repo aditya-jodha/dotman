@@ -17,3 +17,15 @@ def install(source: str) -> None:
         installer=PluginInstaller(),
     )
     manager.install(source)
+
+
+@plugin_app.command()
+@handle_errors
+def uninstall(name: str) -> None:
+    """Uninstall a plugin by the name in its plugin.toml manifest."""
+    cgf = DotmanConfig.load()
+    manager = PluginManager(
+        plugins_dir=cgf.plugins_dir,
+        installer=PluginInstaller(),
+    )
+    manager.uninstall(name)

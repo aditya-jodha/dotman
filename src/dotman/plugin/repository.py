@@ -57,13 +57,9 @@ class PluginRepository:
         """Return the current commit hash."""
         try:
             return self.repo.head().decode("utf-8")
-        except (
-            NotGitRepository,
-            KeyError,
-            TypeError,
-            AttributeError,
-            UnicodeDecodeError,
-        ) as e:
+        except Exception as e:
+            path = getattr(self, "path", None)
             raise PluginRepositoryError(
-                f"Failed to get current commit for {self.path}",
+                "Failed to get current commit",
+                path=path,
             ) from e

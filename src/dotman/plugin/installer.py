@@ -32,9 +32,19 @@ class PluginInstaller:
                 f"Failed to install plugin from {repository.path}",
             ) from e
 
-    def uninstall(self, repository: PluginRepository) -> None:
+    def uninstall(self, distribution_name: str) -> None:
         """Uninstall a plugin Python package."""
-        ...
+        uv_path = self._find_uv
+
+        try:
+            subprocess.run(  # noqa: S603 - executable resolved via shutil.which()
+                [uv_path, "pip", "uninstall", distribution_name],
+                check=True,
+            )
+        except (OSError, subprocess.CalledProcessError) as e:
+            raise PluginInstallationError(
+                f"Failed to uninstall plugin package {distribution_name}",
+            ) from e
 
     def update(self, repository: PluginRepository) -> None:
         """Update a plugin Python package."""
