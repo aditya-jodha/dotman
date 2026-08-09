@@ -1,296 +1,101 @@
 # Architecture
 
-Dotman follows a layered architecture that separates user interaction,
-workflow orchestration, and business logic.
-
-The primary goals are:
-
-- Keep business logic independent of the CLI.
-- Make commands easy to test.
-- Centralize error handling.
-- Allow future extension through new commands, renderers, and plugins.
-
----
-
-# Architecture Overview
+Dotman separates CLI concerns, workflows, filesystem/domain code, plugin loading, and error presentation. The separation is pragmatic: some commands call the public `Dotman` facade while others call an application service.
 
 ```mermaid
 flowchart TB
-
-    User([👤 User])
-
-    subgraph CLI["CLI Layer"]
-        Commands["Typer Commands"]
-        Decorators["Command Decorators"]
-        Renderer["Output Renderer"]
-    end
-
-    subgraph Service["Service Layer"]
-        Services["Application Services"]
-    end
-
-    subgraph Core["Core Layer"]
-        Logic["Business Logic"]
-        Config["Configuration"]
-        Metadata["Metadata"]
-        Linker["Filesystem Operations"]
-    end
-
-    subgraph Errors["Error System"]
-        DotmanError["Structured Errors"]
-    end
-
-    User --> Commands
-    Commands --> Decorators
-    Decorators --> Services
-    Services --> Logic
-
-    Logic --> Config
-    Logic --> Metadata
-    Logic --> Linker
-
-    Logic -. raises .-> DotmanError
-    Services -. propagates .-> DotmanError
-    Decorators -. catches .-> DotmanError
-    DotmanError --> Renderer
+    User --> CLI[Typer CLI]
+    CLI --> Facade[Dotman facade]
+    CLI --> Services[Application services]
+    CLI --> Plugins[Plugin manager]
+    Facade --> Core[Core domain and filesystem code]
+    Services --> Core
+    Plugins --> Repos[Plugin repositories and manifests]
+    Plugins --> API[Plugin API]
+    API --> CLI
+    Core --> Errors[Dotman errors]
+    Services --> Errors
+    Plugins --> Errors
+    Errors --> Renderer[Rich, plain, or JSON renderer]
     Renderer --> User
 ```
 
----
+## Runtime flow
 
-# Layer Responsibilities
+`dotman.__cli__.main()` loads the effective configuration, constructs a `PluginManager`, and loads installed plugins before Typer parses and dispatches the command. The root app owns the built-in command groups:
 
-| Layer | Responsibility |
-|---------|---------------|
-| CLI | Parse arguments, interact with the user, invoke services |
-| Service | Coordinate multiple core components into one workflow |
-| Core | Business rules and filesystem operations |
-| Error | Strongly typed domain errors |
-| Renderer | Convert errors into Rich, Plain or JSON output |
+- file management: `init`, `add`, `remove`, `sync`, and `doctor`;
+- configuration: `config show`, `config get`, and `config set`;
+- profiles: `profile create`, `profile use`, `profile delete`, and `profile ls`;
+- extensions: `plugin install` and `plugin uninstall`, plus plugin-provided Typer apps.
 
----
+`handle_errors` converts domain-specific `DotmanError` values into the selected output format. Commands otherwise keep their own successful-output rendering.
 
-# Dependency Rules
+## Dotfile model
 
-Dotman intentionally enforces one-way dependencies.
+The configured `dotfiles_dir` contains a metadata file plus profile directories. Each profile has packages, and each package preserves paths relative to `home_dir`.
 
-```mermaid
-flowchart LR
-
-CLI --> Service
-Service --> Core
-
-Core --> Errors
-Service --> Errors
-CLI --> Errors
-
-CLI --> Renderer
-
-Renderer -. output only .-> User
+```text
+dotfiles_dir/
+├── metadata.yml                 # active profile
+└── profiles/
+    └── work/
+        ├── shell/.zshrc
+        └── editor/.config/nvim/init.lua
 ```
 
-Rules:
+`AddFiles` validates that an item belongs to `home_dir`, records moves in a rollback journal, and moves the item into the active profile/package. `SyncService` iterates package files and delegates to `Linker`, which either creates a symlink, repairs one, skips an already-correct link, or backs up a conflicting target. `ProfileSwitcher` unlinks the old profile before linking the requested profile.
 
-- Core never imports CLI.
-- Services never perform terminal rendering.
-- CLI never implements business logic.
-- Renderers are presentation only.
-- Errors travel upward through the layers.
+## Main modules
 
----
+| Area | Key modules | Responsibility |
+| --- | --- | --- |
+| CLI | `cli/app`, `cli/config`, `cli/profile`, `cli/plugin` | Typer commands, prompts, and success output. |
+| Public API | `api.py` | Convenience facade for add and doctor workflows. |
+| Services | `core/service` | Coordinate initialization, add, remove, sync, doctor, and profile switching. |
+| Core | `core/add.py`, `core/linker.py`, `core/profile.py`, `core/doctor.py` | Dotfile model, file operations, link status, profiles, and diagnostics. |
+| Configuration | `core/config` | Validated YAML configuration and filesystem constants. |
+| Plugins | `plugin` | Git repositories, manifests, package installation, discovery, and command registration. |
+| Errors | `errors` | Typed errors and serializable error payloads. |
+| Rendering | `cli/renderer` | Rich, plain, and JSON error output. |
 
-# Request Lifecycle
+## Plugin lifecycle
 
-The following sequence illustrates the execution of:
-
-```bash
-dotman add ~/.zshrc --package shell
-```
+The plugin manager owns repositories directly under `plugins_dir`.
 
 ```mermaid
 sequenceDiagram
+    participant U as User
+    participant C as CLI
+    participant M as PluginManager
+    participant R as Git repository
+    participant I as PluginInstaller
 
-actor User
+    U->>C: plugin install SOURCE
+    C->>M: install(SOURCE)
+    M->>R: clone into plugins_dir
+    M->>M: load and validate plugin.toml
+    M->>I: uv pip install .
+    alt package installation fails
+        M->>R: remove newly cloned repository
+    end
 
-participant CLI
-participant Service
-participant Core
-participant Renderer
-
-User->>CLI: dotman add
-
-CLI->>CLI: decorators
-
-CLI->>Service: preview()
-
-Service->>Core: validate()
-
-Core-->>Service: validation result
-
-Service-->>CLI: Preview
-
-CLI-->>User: Display preview
-
-User->>CLI: Confirm
-
-CLI->>Service: commit()
-
-Service->>Core: move files
-
-Core-->>Service: Success
-
-Service-->>CLI: Success
-
-CLI-->>User: Completed
+    U->>C: plugin uninstall NAME
+    C->>M: uninstall(NAME)
+    M->>M: find unique manifest.name
+    M->>I: uv pip uninstall distribution_name
+    M->>R: remove managed repository
 ```
 
----
+`PluginLoader` imports the class specified by `entry_point` and invokes its `register(api)` method. `PluginAPI` deliberately exposes only Typer-app registration, keeping plugins out of Dotman's internal command wiring.
 
-# Core Modules
-
-| Module | Responsibility |
-|---------|----------------|
-| add.py | Import files into the dotfiles repository |
-| linker.py | Create and restore symbolic links |
-| profile.py | Profile creation and management |
-| doctor.py | Validate repository health |
-| config.py | Load and validate configuration |
-| get_internal_data.py | Manage metadata |
-
----
-
-# Service Modules
-
-Services orchestrate multiple core modules.
-
-| Service | Uses |
-|-----------|------|
-| AddService | add.py |
-| ProfileService | profile.py + linker.py |
-| SyncService | linker.py |
-| DoctorService | doctor.py |
-| InitializerService | config.py |
-| RemoveService | pathlib |
-
----
-
-# Error System
-
-Every domain error inherits from `DotmanError`.
-
-The CLI never formats errors directly.
-
-Instead:
+## Dependency direction
 
 ```text
-Core
-   │
-raises
-   ▼
-DotmanError
-   │
-caught by
-   ▼
-handle_errors
-   │
-uses
-   ▼
-Renderer
-   │
-prints
-   ▼
-User
+CLI ──> public API / services ──> core ──> errors
+CLI ──> plugin manager ──> repositories, manifests, installer, errors
+CLI ──> renderers
+plugins ──> PluginAPI ──> root Typer app
 ```
 
-Supported renderers:
-
-- Rich
-- Plain
-- JSON
-
-This makes it possible to reuse the same business logic in different frontends.
-
----
-
-# Directory Layout
-
-```text
-src/dotman
-├── __cli__.py
-├── __init__.py
-├── cli
-│   ├── __init__.py
-│   ├── app
-│   │   ├── __init__.py
-│   │   ├── add.py
-│   │   ├── doctor.py
-│   │   ├── init.py
-│   │   ├── remove.py
-│   │   ├── root.py
-│   │   └── sync.py
-│   ├── common_func.py
-│   ├── completion.py
-│   ├── config
-│   │   ├── __init__.py
-│   │   └── root.py
-│   ├── profile
-│   │   ├── __init__.py
-│   │   ├── root.py
-│   │   └── use.py
-│   ├── renderer
-│   │   ├── __init__.py
-│   │   ├── base.py
-│   │   ├── factory.py
-│   │   ├── json.py
-│   │   ├── plain.py
-│   │   └── rich.py
-│   └── tree_builder.py
-├── core
-│   ├── __init__.py
-│   ├── add.py
-│   ├── config
-│   │   ├── __init__.py
-│   │   ├── config.py
-│   │   ├── constants.py
-│   │   └── types.py
-│   ├── doctor.py
-│   ├── get_internal_data.py
-│   ├── initializer.py
-│   ├── linker.py
-│   ├── profile.py
-│   ├── service
-│   │   ├── __init__.py
-│   │   ├── add_service.py
-│   │   ├── doctor_service.py
-│   │   ├── initializer_service.py
-│   │   ├── profile_service.py
-│   │   ├── remove_service.py
-│   │   └── sync_service.py
-│   ├── utils
-│   │   └── fs.py
-│   └── validator.py
-└── errors
-    ├── __init__.py
-    ├── config_errors.py
-    ├── custom_errors.py
-    ├── dotman_error.py
-    ├── initializer_errors.py
-    ├── profile_errors.py
-    └── validator_errors.py
-```
-
----
-
-# Future Direction
-
-The current architecture intentionally keeps the CLI separate from the core
-logic.
-
-This makes future integrations possible without changing the business layer,
-including:
-
-- Plugin support
-- REST API
-- Textual TUI
-- GUI frontends
-- Additional output renderers
+Core code does not import the CLI or render terminal output. Services do not depend on renderers. This keeps filesystem behavior testable without invoking Typer and gives callers consistent structured errors.

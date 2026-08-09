@@ -66,10 +66,12 @@ class RollbackJournal:
             self.path.unlink()
 
     def add_entry(self, original: Path, new: Path) -> None:
-        self.entries.append({
-            self.ORIGINAL_PATH: str(original),
-            self.NEW_PATH: str(new),
-        })
+        self.entries.append(
+            {
+                self.ORIGINAL_PATH: str(original),
+                self.NEW_PATH: str(new),
+            }
+        )
 
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)

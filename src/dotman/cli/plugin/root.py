@@ -1,6 +1,7 @@
 import typer
 
 from dotman.cli.common_func import handle_errors
+from dotman.cli.completion import complete_plugins
 from dotman.core.config.config import DotmanConfig
 from dotman.plugin.installer import PluginInstaller
 from dotman.plugin.manager import PluginManager
@@ -21,7 +22,11 @@ def install(source: str) -> None:
 
 @plugin_app.command()
 @handle_errors
-def uninstall(name: str) -> None:
+def uninstall(
+    name: str = typer.Argument(
+        ..., help="Plugin name from plugin.toml.", autocompletion=complete_plugins
+    ),
+) -> None:
     """Uninstall a plugin by the name in its plugin.toml manifest."""
     cgf = DotmanConfig.load()
     manager = PluginManager(

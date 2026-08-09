@@ -5,15 +5,17 @@ import pytest
 from dulwich import porcelain
 
 from dotman.errors.plugin_errors import PluginNotFoundError
+from dotman.plugin.installer import PluginInstaller
 from dotman.plugin.manager import PluginManager
+from dotman.plugin.repository import PluginRepository
 
 
-class FakeInstaller:
+class FakeInstaller(PluginInstaller):
     def __init__(self) -> None:
-        self.installed = []
-        self.uninstalled = []
+        self.installed: list[Path] = []
+        self.uninstalled: list[str] = []
 
-    def install(self, repository) -> None:
+    def install(self, repository: PluginRepository) -> None:
         self.installed.append(repository.path)
 
     def uninstall(self, distribution_name: str) -> None:
@@ -21,7 +23,7 @@ class FakeInstaller:
 
 
 class FailingInstaller(FakeInstaller):
-    def install(self, repository) -> None:
+    def install(self, repository: PluginRepository) -> None:
         super().install(repository)
         raise RuntimeError("package installation failed")  # noqa: TRY003
 

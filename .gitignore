@@ -18,6 +18,8 @@ htmlcov/
 
 .DS_Store
 
+assets
+
 # Virtual environments
 .venv/
 .env/
