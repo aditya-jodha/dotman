@@ -10,17 +10,19 @@ from uuid import uuid4
 import yaml
 from pydantic import BaseModel, ConfigDict, DirectoryPath, ValidationError, field_validator
 
-from dotman.core.config.constants import (
+from dotman.errors.config_errors import (
+    ConfigParseError,
+    InvalidConfigFileError,
+    InvalidConfigKeyError,
+    InvalidConfigValueError,
+)
+
+from .constants import (
     CONFIG_ENV_VAR,
     DEFAULT_CONFIG_PATH,
     DEFAULT_DOTFILES_DIR,
     DEFAULT_HOME_DIR,
-)
-from dotman.errors.config_errors import (
-    DotmanConfigParseError,
-    InvalidConfigFileError,
-    InvalidConfigKeyError,
-    InvalidConfigValueError,
+    DEFAULT_PLUGINS_DIR,
 )
 
 if TYPE_CHECKING:
@@ -34,6 +36,8 @@ class DotmanConfig(BaseModel):
 
     dotfiles_dir: Path
     home_dir: DirectoryPath
+
+    plugins_dir: Path = DEFAULT_PLUGINS_DIR
 
     def save(self, path: Path | None = None) -> None:
         """Save the config to a file."""
@@ -49,7 +53,7 @@ class DotmanConfig(BaseModel):
         """Get the path to the config file."""
         return Path(os.getenv(CONFIG_ENV_VAR, DEFAULT_CONFIG_PATH)).expanduser()
 
-    @field_validator("dotfiles_dir", "home_dir", mode="before")
+    @field_validator("dotfiles_dir", "home_dir", "plugins_dir", mode="before")
     @classmethod
     def expand_path(cls, value: StrPath) -> Path:
         return Path(value).expanduser()
@@ -59,6 +63,7 @@ class DotmanConfig(BaseModel):
         return DotmanConfig(
             dotfiles_dir=DEFAULT_DOTFILES_DIR,
             home_dir=DEFAULT_HOME_DIR,
+            plugins_dir=DEFAULT_PLUGINS_DIR,
         )
 
     def set(self, key: Any, value: Any) -> DotmanConfig:
@@ -90,7 +95,7 @@ class DotmanConfig(BaseModel):
             return cls.model_validate(data)
 
         except yaml.YAMLError as e:
-            raise DotmanConfigParseError(config_path, e) from e
+            raise ConfigParseError(config_path, e) from e
 
         except ValidationError as e:
             raise InvalidConfigFileError(path=config_path, error=e) from e

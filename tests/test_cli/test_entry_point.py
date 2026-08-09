@@ -1,9 +1,9 @@
 # ruff: noqa: S101
 
-import sys
 from unittest.mock import MagicMock
 
 import pytest
+import typer
 from typer.testing import CliRunner
 
 import dotman.__cli__ as cli
@@ -13,24 +13,23 @@ runner = CliRunner()
 
 
 def test_keyboard_interrupt_handling(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Verify that KeyboardInterrupt prints a safe message and exits with 0."""
+    """Verify that KeyboardInterrupt prints a safe message and exits with 130."""
 
     # Create type-safe mocks
     mock_print = MagicMock()
-    mock_exit = MagicMock()
     mock_app = MagicMock(side_effect=KeyboardInterrupt)
 
     # Monkeypatch the live application variables
     monkeypatch.setattr(cli, "app", mock_app)
     monkeypatch.setattr(cli.console, "print", mock_print)
-    monkeypatch.setattr(sys, "exit", mock_exit)
 
-    # Execute the actual production main function to cover lines 15-19
-    cli.main()
+    # Execute and assert that typer.Exit(130) is raised
+    with pytest.raises(typer.Exit) as exc_info:
+        cli.main()
 
-    # Assertions on the patched components
+    # Assertions on code behavior
+    assert exc_info.value.exit_code == 130
     mock_print.assert_called_once_with("\n[red]Process interrupted. Exiting safely.[/]")
-    mock_exit.assert_called_once_with(130)
 
 
 def test_root_app_help():

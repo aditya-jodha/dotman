@@ -5,7 +5,7 @@ import pytest
 import yaml
 
 from dotman.core.get_internal_data import DotmanMetadata, resolve_profile
-from dotman.errors.config_errors import DotmanConfigParseError, InvalidConfigFileError
+from dotman.errors.config_errors import ConfigParseError, InvalidConfigFileError
 from dotman.errors.profile_errors import ProfileMetaDataFileCorruptedError
 
 
@@ -53,7 +53,7 @@ class TestDotmanMetadata:
     def test_load_yaml_error(self, tmp_path: Path):
         file_path = tmp_path / "meta.yaml"
         file_path.write_text(":\n:bad_yaml")
-        with pytest.raises(DotmanConfigParseError):
+        with pytest.raises(ConfigParseError):
             DotmanMetadata.load(file_path)
 
     def test_load_validation_error(self, tmp_path: Path):

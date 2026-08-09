@@ -5,9 +5,10 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12.13"
 authors = [
-  { name = "Aditya Pratap Singh Rathore" }
+    { name = "Aditya Pratap Singh Rathore", email = "247943295+aditya-jodha@users.noreply.github.com" }
 ]
 dependencies = [
+    "dulwich>=1.2.12",
     "pydantic>=2.13.4",
     "pyyaml>=6.0.3",
     "rich>=15.0.0",
@@ -15,10 +16,10 @@ dependencies = [
 ]
 
 [project.scripts]
-dotman = "dotman.__cli__:app"
+dotman = "dotman.__cli__:main"
 
 [build-system]
-requires = ["uv_build>=0.11.26,<0.12.0"]
+requires = ["uv_build>=0.12.0,<0.13.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
@@ -29,11 +30,6 @@ dev = [
     "ruff>=0.15.16",
     "ty>=0.0.54",
 ]
-
-# --- Build & Tooling Layout ---
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/dotman"]
 
 [tool.typer]
 main = "dotman.__cli__:app"

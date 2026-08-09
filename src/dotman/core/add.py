@@ -1,4 +1,5 @@
 import json
+import sqlite3
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -44,6 +45,20 @@ class RollbackJournal:
     def __init__(self, log_file: StrPath | None = None):
         self.path = Path(log_file) if log_file else get_temp_log_file(DotmanConfig.load())
         self.entries: list[dict[str, str]] = []
+
+    def _init_db(self) -> None:
+        """Prepares the binary journal file and turns on WAL mode for protection."""
+        with sqlite3.connect(self.path) as conn:
+            # WAL mode updates a sidecar file rather than modifying the core DB directly.
+            # This completely shields against corruption if the script loses execution.
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS journal (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    original_path TEXT NOT NULL,
+                    new_path TEXT NOT NULL
+                );
+            """)
 
     def clear(self):
         """Clears the log file."""

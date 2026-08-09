@@ -9,12 +9,17 @@ from dotman.core.config import config
 from dotman.errors.config_errors import InvalidConfigFileError
 
 
-def test_dotmanconfig_as_dict(tmp_path: Path):
-    dir_ = tmp_path / "dot"
-    dir_.mkdir()
+@pytest.fixture
+def cfg(tmp_path: Path) -> config.DotmanConfig:
+    dot = tmp_path / "dot"
     home = tmp_path / "home"
+    plugins = tmp_path / "plugins"
+    dot.mkdir()
     home.mkdir()
-    cfg = config.DotmanConfig(dotfiles_dir=dir_, home_dir=home)
+    return config.DotmanConfig(dotfiles_dir=dot, home_dir=home, plugins_dir=plugins)
+
+
+def test_dotmanconfig_as_dict(cfg: config.DotmanConfig):
     d = cfg.model_dump(mode="json")
     assert d["dotfiles_dir"].endswith("dot")
     assert d["home_dir"].endswith("home")
@@ -27,8 +32,7 @@ def test_internal_filesystemobject_values():
     assert "profiles" in vals
 
 
-def test_get_temp_log_file_creates_path(tmp_path: Path):
-    cfg = config.DotmanConfig(dotfiles_dir=tmp_path, home_dir=tmp_path)
+def test_get_temp_log_file_creates_path(cfg: config.DotmanConfig):
     path = config.get_temp_log_file(cfg)
 
     assert path.parent.parent.name == "logbook"
@@ -73,11 +77,8 @@ def test_load_config_reads_valid_file(tmp_path: Path):
     assert cfg.home_dir == (tmp_path / "home")
 
 
-def test_save_config_writes_yaml(tmp_path: Path):
+def test_save_config_writes_yaml(tmp_path: Path, cfg: config.DotmanConfig):
     path = tmp_path / "out.yml"
-    (tmp_path / "dot").mkdir()
-    (tmp_path / "home").mkdir()
-    cfg = config.DotmanConfig(dotfiles_dir=tmp_path / "dot", home_dir=tmp_path / "home")
     cfg.save(path)
     data = yaml.safe_load(path.read_text())
     assert data["dotfiles_dir"].endswith("dot")

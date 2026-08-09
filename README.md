@@ -1,15 +1,11 @@
+# Dotman
+
+Dotman is a Python CLI for storing dotfiles by profile and package, then linking them back into a home directory. It also provides profile switching, diagnostics, structured error output, and installable command plugins.
+
+https://github.com/user-attachments/assets/e07f0579-8d2d-42e5-bc16-0a537472da9c
+
+
 <div align="center">
-
-# **Dotman**
-
-```
-      _       _                       
-   __| | ___ | |_ _ __ ___   __ _ _ __
-  / _` |/ _ \| __| '_ ` _ \ / _` | '_ \
-
- | (_| | (_) | |_| | | | | | (_| | | | |
-  \__,_|\___/ \__|_| |_| |_|\__,_|_| |_|
-```
 
 [![CI](https://github.com/aditya-jodha/dotman/actions/workflows/ci.yml/badge.svg)](https://github.com/aditya-jodha/dotman/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/aditya-jodha/dotman/branch/main/graph/badge.svg)](https://codecov.io/gh/aditya-jodha/dotman)
@@ -27,49 +23,9 @@
 
 </div>
 
-```
-     -----------------
-    |                 |
-    |                 |
-    |                 |
-    |                 |
-    |                 |
- ___|             ____|___
-|_________________________|
-    |    _       _    |
-    |   (-)     (-)   |
-    \                 /
-     |       ^^      |   ¨Right, let's sort your environment!¨
-     \    \______/   /
-      \___        __/
-          \______/
-```
-
-<div align="center">
-
-**A modern, lightweight dotfile manager written in Python.**
-
-*Manage, organize, sync, and switch configurations seamlessly.*
-
-</div>
-
-
-
-https://github.com/user-attachments/assets/e07f0579-8d2d-42e5-bc16-0a537472da9c
-
-
-## Why Dotman
-
-Managing dotfiles across multiple machines quickly becomes messy.
-
-Dotman provides a predictable workflow for organizing configuration
-files, previewing changes before they happen, synchronizing symlinks,
-and switching between multiple profiles safely.
-
-______________________________________________________________________
-
 ## ✨ Features
 
+- **Plugin System**: Extend Dotman with custom commands and functionality.
 - **Multiple Profiles**: Manage separate configurations seamlessly.
 - **Automatic Symlink Management**: Handles path linking without manual intervention.
 - **Safe Rollback**: Revert changes safely if things go wrong.
@@ -81,39 +37,20 @@ ______________________________________________________________________
 
 ---
 
-🧪 **190+ Tests Passing**
+🧪 **230+ Tests Passing**
 
 ---
 
-# Installation
+## Installation
 
-## Using `uv` (Recommended)
-
-Install `uv` (if you don't already have it):
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-Run Dotman instantly without installing:
-
-```bash
-uvx --from git+https://github.com/aditya-jodha/dotman.git dotman --help
-```
-
-Or install it globally:
+Dotman requires Python 3.12.13 or later and uses [uv](https://docs.astral.sh/uv/).
 
 ```bash
 uv tool install git+https://github.com/aditya-jodha/dotman.git
-```
-
-Verify the installation:
-
-```bash
 dotman --help
 ```
 
-## From Source
+To work from a checkout instead:
 
 ```bash
 git clone https://github.com/aditya-jodha/dotman.git
@@ -122,174 +59,137 @@ uv sync
 uv run dotman --help
 ```
 
-______________________________________________________________________
+## Quick start
 
-### Safe File Addition
-
-Add existing configuration files into Dotman's managed storage.
-
-Dotman:
-
-- Preserves directory structure
-- Creates packages automatically
-- Shows a preview before committing
-- Allows rollback before finalizing changes
-
-______________________________________________________________________
-
-### Sync Command
-
-Sync managed dotfiles back into your home directory.
-
-```bash
-dotman sync
-```
-
-Dotman automatically creates symlinks from your managed files to their correct locations.
-
-______________________________________________________________________
-
-### Doctor Command
-
-Diagnose broken or incorrect symlinks.
-
-Checks include:
-
-- Missing targets
-- Broken symlinks
-- Incorrect symlink destinations
-- Non-symlink files where symlinks are expected
-
-______________________________________________________________________
-
-### Automatic Backups
-
-> When conflicts occur, Dotman can safely move existing files into a backup location before linking. (This still needs to make it more robust)
-
-______________________________________________________________________
-
-### Tested
-
-Current test suite includes:
-
-- Add command tests
-- Doctor tests
-- Linker tests
-- Unlinker tests
-- Profile management tests
-
-```bash
-uv run pytest
-```
-
-Current status:
-
-```text
-191 passed in 1.49s
-```
-
-______________________________________________________________________
-
-## Quick Start
-
-### Initialize Dotman
+Initialize Dotman and choose the first profile when prompted:
 
 ```bash
 dotman init
 ```
 
-### Add a Configuration
+Add a file from the configured home directory to a package. Dotman previews the operation and asks whether to commit it.
 
 ```bash
-dotman add ~/.bash_profile --package bash
-```
-
-### Sync Files
-
-```bash
+dotman add ~/.zshrc --package shell
 dotman sync
 ```
 
-### Run Diagnostics
+The managed copy is stored under:
 
-```bash
-dotman doctor
+```text
+~/.dotfiles/
+├── metadata.yml
+└── profiles/
+    └── <profile>/
+        └── <package>/
+            └── <path-relative-to-home>
 ```
 
-______________________________________________________________________
-
-## How dotman Works
-
-Read the [Architecture.md](ARCHITECTURE.md) for a detailed explanation of the internal workings of Dotman.
-
-______________________________________________________________________
-
-## Example Workflow
-
-Create a profile:
-
-```bash
-dotman profile create work
-```
-
-Switch to it:
-
-```bash
-dotman profile use work
-```
-
-Add files:
-
-```bash
-dotman add ~/.bash_profile --package bash
-dotman add ~/.config/.tmux --package tmux
-```
-
-Sync:
-
-```bash
-dotman sync
-```
-
-Verify:
-
-```bash
-dotman doctor
-```
-
-______________________________________________________________________
+For example, adding `~/.config/nvim/init.lua` to the `editor` package creates `~/.dotfiles/profiles/<profile>/editor/.config/nvim/init.lua`. `dotman sync` then links that file to `~/.config/nvim/init.lua`.
 
 ## Commands
 
-| Command                 | Description             |
-| ----------------------- | ----------------------- |
-| `dotman init`           | Initialize Dotman       |
-| `dotman add`            | Add a file or directory |
-| `dotman sync`           | Create symlinks         |
-| `dotman doctor`         | Verify symlink health   |
-| `dotman profile create` | Create profile          |
-| `dotman profile use`    | Switch profile          |
-| `dotman profile delete` | Delete profile          |
-| `dotman profile list`   | List profiles           |
+| Command | Description |
+| --- | --- |
+| `dotman init` | Create the dotfiles directory and initial profile. An existing directory is renamed to `<dotfiles_dir>.backup`. |
+| `dotman add FILE --package NAME` | Move a file or directory from the configured home directory into the active profile; confirm to commit or roll back. |
+| `dotman remove FILE` | Remove a managed file from the active profile and clean up empty package directories. |
+| `dotman sync [--package NAME] [--dry-run]` | Create, repair, or preview symlinks for the active profile. Existing conflicting targets are backed up under `~/.dotman_backup`. |
+| `dotman doctor [-a|--all]` | Report dotfiles-directory, package, permission, and symlink health. `--all` includes healthy links. |
+| `dotman profile create NAME` | Create an empty profile. |
+| `dotman profile use [NAME]` | Switch profiles, unlinking the old profile and linking the new one. Without a name, it lists profiles. |
+| `dotman profile delete NAME` | Delete an empty profile. |
+| `dotman profile ls` | List profiles. |
+| `dotman config show` | Print the effective configuration. |
+| `dotman config get KEY` | Print one configuration value. |
+| `dotman config set KEY VALUE` | Validate and persist one configuration value. |
+| `dotman plugin install SOURCE` | Clone a Git plugin repository, validate its manifest, and install its Python package. |
+| `dotman plugin uninstall NAME` | Uninstall a plugin by the `name` in its manifest and remove its managed repository. |
 
-______________________________________________________________________
+Use `--output rich`, `--output plain`, or `--output json` for supported structured-error renderers.
 
-## Architecture
+## Configuration
 
-For better understanding of the architecture, please refer to [Architecture.md](https://github.com/aditya-jodha/dotman/blob/main/ARCHITECTURE.md)
+The default configuration file is `~/.config/dotman/config.yml`. Set `DOTMAN_CONFIG` to use another location. Its supported keys are:
 
-## How to change the dotfiles folder name
+```yaml
+dotfiles_dir: ~/.dotfiles
+home_dir: ~
+plugins_dir: ~/.config/dotman/plugins
+```
 
-______________________________________________________________________
+Paths are expanded when Dotman loads the configuration. Existing configuration files that do not contain `plugins_dir` continue to use the default location.
 
-User can change the dotfiles folder name by editing the `config.py` file or leave this task to dotman by using the `dotman config` command.
+## Plugins
 
-When a user updates the configuration via the dotman config command, dotman automatically validates the input keys and data.
-- Valid input: dotman updates the configuration file with the new data.
-- Invalid input: dotman rejects the changes, aborts the update, and displays a detailed error message.
+A plugin is a Git/Local repository containing an installable Python project alongside a plugin.toml manifest. On startup, Dotman automatically loads all installed plugins, allowing them to register custom typer sub-applications via the PluginAPI.
 
-> [!CAUTION] 
-> If user modifies the configuration file manually, dotman will  validate the changes at runtime and may lead to unexpected behavior in some commands.
+- Every plugin must include a plugin.toml file at its root to define its metadata and entry points.
+```toml title="plugin.toml"
+[plugin]
+name = "example-plugin"
+version = "0.1.0"
+description = "Adds example commands to Dotman"
+authors = ["Your Name"]
+entry_point = "fake_repo.plugin:ExamplePlugin"
+distribution_name = "example-plugin"
+
+[dotman]
+api_version = "1"
+```
+
+- The plugin must contain a `plugin.toml` file at its root to define its metadata and entry points. The plugin must contain a `pyproject.toml` file at its root to define its dependencies.
+```
+fake_repo on  main [!] is 📦 v0.1.0 via 🐍 v3.12.13 
+❯ tree                                                                      
+ .
+├── plugin.toml
+├── pyproject.toml
+├── README.md
+├── src
+│   └── fake_repo
+│       ├── __init__.py
+│       └── plugin.py
+└── uv.lock
+```
+
+- The specified entry_point must point to a Python class exposing a register(api: PluginAPI) method. Use api.add_typer() to attach your custom CLI commands to the main application.
+
+```python
+import typer
+
+from dotman.plugin import PluginAPI
+
+app = typer.Typer(help="Example plugin commands.")
+
+
+@app.command()
+def hello(name: str = "world") -> None:
+    print(f"Hello, {name}!")
+
+
+class ExamplePlugin:
+    def register(self, api: PluginAPI) -> None:
+        api.add_typer(app, name="example")
+```
+
+Plugins can be managed directly through the core Dotman CLI using Git repository URLs:
+
+```bash
+dotman plugin install https://github.com/example/dotman-example-plugin.git
+dotman plugin uninstall example-plugin
+```
+
+> [!CAUTION]
+> If installation fails after cloning, Dotman removes the newly cloned repository. During uninstallation it first removes the Python distribution, then deletes only the matching repository directly inside `plugins_dir`.
+
+## Development
+
+```bash
+uv run pytest
+uv run ruff check src tests
+uv run ruff format --check src tests
+```
 
 ## Roadmap
 
@@ -303,16 +203,17 @@ When a user updates the configuration via the dotman config command, dotman auto
 - [x] Automated testing
 - [x] Package removal command
 - [x] Configuration file support
+- [x] Plugin system
 
 ### Planned
 
+- [ ] Plugin discovery and search (~ PLUGIN MARKETPLACE)
 - [ ] Package management
-- [ ] Plugin system
 - [ ] Profile export/import
 - [ ] Dry-run mode improvements
 - [ ] Windows support
 
-______________________________________________________________________
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance and [ARCHITECTURE.md](ARCHITECTURE.md) for module boundaries and runtime flow.
 
 <div>
     <div align="Right">
