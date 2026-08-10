@@ -1,4 +1,3 @@
-import json
 import sqlite3
 from dataclasses import dataclass
 from enum import Enum
@@ -37,60 +36,69 @@ class SymlinkCheck:
 
 
 class RollbackJournal:
-    """Rollback journal storing file operations in TOML for recovery."""
+    """SQLite-backed journal for reversible file operations."""
 
-    ORIGINAL_PATH = "original_path"
-    NEW_PATH = "new_path"
-
-    def __init__(self, log_file: StrPath | None = None):
+    def __init__(self, log_file: StrPath | None = None) -> None:
         self.path = Path(log_file) if log_file else get_temp_log_file(DotmanConfig.load())
-        self.entries: list[dict[str, str]] = []
+
+        self._init_db()
 
     def _init_db(self) -> None:
-        """Prepares the binary journal file and turns on WAL mode for protection."""
+        """Initialize the SQLite journal database.
+
+        WAL mode improves durability and crash recovery characteristics
+        for journal writes.
+        """
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+
         with sqlite3.connect(self.path) as conn:
-            # WAL mode updates a sidecar file rather than modifying the core DB directly.
-            # This completely shields against corruption if the script loses execution.
-            conn.execute("PRAGMA journal_mode=WAL;")
-            conn.execute("""
+            conn.execute("PRAGMA journal_mode=WAL")
+
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS journal (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     original_path TEXT NOT NULL,
                     new_path TEXT NOT NULL
-                );
-            """)
-
-    def clear(self):
-        """Clears the log file."""
-        if self.path.exists():
-            self.path.unlink()
+                )
+                """
+            )
 
     def add_entry(self, original: Path, new: Path) -> None:
-        self.entries.append(
-            {
-                self.ORIGINAL_PATH: str(original),
-                self.NEW_PATH: str(new),
-            }
-        )
+        """Record a file operation."""
+        with sqlite3.connect(self.path) as conn:
+            conn.execute(
+                """
+                INSERT INTO journal (original_path, new_path)
+                VALUES (?, ?)
+                """,
+                (str(original), str(new)),
+            )
 
-    def save(self) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
+    def clear(self) -> None:
+        """Clear the journal."""
+        with sqlite3.connect(self.path) as conn:
+            conn.execute("DELETE FROM journal")
 
-        with self.path.open("w", encoding="utf-8") as f:
-            json.dump({"files": self.entries}, f, indent=2)
+    def rollback(self) -> None:
+        """Rollback all recorded file operations."""
+        with sqlite3.connect(self.path) as conn:
+            rows = conn.execute(
+                """
+                SELECT original_path, new_path
+                FROM journal
+                ORDER BY id DESC
+                """
+            ).fetchall()
 
-    def rollback(self):
-        with self.path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
+            for original_path, new_path in rows:
+                original = Path(original_path)
+                new = Path(new_path)
 
-        # Reverse the entries to restore the files in reverse order (Not matters today)
-        for entry in reversed(data.get("files", [])):
-            original_path = Path(entry[self.ORIGINAL_PATH])
-            new_path = Path(entry[self.NEW_PATH])
+                if new.exists():
+                    new.rename(original)
 
-            if new_path.exists():
-                new_path.rename(original_path)
-        self.clear()
+            self.clear()
 
 
 class AddFiles:
@@ -182,7 +190,6 @@ class AddFiles:
 
         # Writes log for backup
         self.log_book.add_entry(self.file, self.destination)
-        self.log_book.save()
 
         # Ensure the parent directory of the destination exists before moving the file
         self.destination.parent.mkdir(parents=True, exist_ok=True)
