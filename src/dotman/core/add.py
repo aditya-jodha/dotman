@@ -190,7 +190,6 @@ class AddFiles:
 
         # Writes log for backup
         self.log_book.add_entry(self.file, self.destination)
-        self.log_book.save()
 
         # Ensure the parent directory of the destination exists before moving the file
         self.destination.parent.mkdir(parents=True, exist_ok=True)

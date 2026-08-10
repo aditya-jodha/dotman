@@ -207,14 +207,15 @@ def test_delete_package_with_files(tmp_path: Path):
 
 def test_move_file_to_dotfiles_calls_logbook(tmp_path: Path):
     addfiles = setup_addfiles(tmp_path)
-    with (
-        patch.object(addfiles.log_book, "add_entry") as mock_add,
-        patch.object(addfiles.log_book, "save") as mock_save,
-    ):
+
+    with patch.object(addfiles.log_book, "add_entry") as mock_add:
         result = addfiles.move_file_to_dotfiles()
-        assert result == ExitCode.SUCCESS
-        mock_add.assert_called_once_with(addfiles.file, addfiles.destination)
-        mock_save.assert_called_once()
+
+    assert result == ExitCode.SUCCESS
+    mock_add.assert_called_once_with(
+        addfiles.file,
+        addfiles.destination,
+    )
 
 
 def test_file_exists_in_package(tmp_path: Path):
