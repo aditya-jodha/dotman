@@ -53,7 +53,7 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) before making cross-layer changes.
 
 ## Plugin contributions
 
-Plugins are Git repositories with an installable Python project and a `plugin.toml` file. The manifest requires `name`, `version`, `description`, `authors`, and an `entry_point` in `module:Class` form. It may specify `distribution_name` when the Python distribution differs from the plugin name.
+Plugins are Git repositories with an installable Python project. Define a `dotman.plugins` entry point in `pyproject.toml`; its entry-point name is the plugin name and its `module:Class` value identifies the plugin class. Package metadata provides the version, description, authors, and distribution name. Plugin classes must declare `api_version = "1"`.
 
 Plugin classes implement `register(api)`. Use `api.add_typer(...)` to expose commands. Do not depend on Dotman's private command wiring; the plugin API is the supported integration boundary.
 

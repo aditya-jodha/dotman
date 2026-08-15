@@ -20,6 +20,8 @@ from dotman.errors.custom_errors import (
     TargetFileIsHomeError,
 )
 from dotman.errors.dotman_error import ExitCode
+from dotman.plugin import AddValidationContext
+from dotman.plugin.validation import ValidationRegistry
 
 
 class SymlinkStatus(Enum):
@@ -113,6 +115,7 @@ class AddFiles:
         file: Path,
         package: str,
         logbook: RollbackJournal,
+        validation: ValidationRegistry,
     ):
         self.profile_name = profile_name
         self.home_dir = home_dir.resolve()
@@ -123,6 +126,8 @@ class AddFiles:
 
         self.package = package  # Package name is already sanitized by AddService.
         self.log_book = logbook
+
+        self.validation_registry = validation
 
     @property
     def is_dir(self) -> bool:
@@ -151,7 +156,6 @@ class AddFiles:
     def validate(self) -> None:
         """This validates all the scenario, and make destination class instance."""
         # Order matters for user to get a reasonable answer.
-        # NOTE: whenever new error added here, need to update the service_add.py file as well.
         if self.file == self.home_dir:
             raise TargetFileIsHomeError(self.file)
         if self.file == self.dotfiles_dir:
@@ -174,6 +178,15 @@ class AddFiles:
 
         if self.is_file_in_package:
             raise FileNameCollidingError(self.file)
+
+        context = AddValidationContext(
+            file=self.file,
+            package=self.package,
+            home_dir=self.home_dir,
+            dotfiles_dir=self.dotfiles_dir,
+        )
+
+        self.validation_registry.validate_add(context)
 
     def create_package(self):
         """Creates the directory inside dotfiles"""

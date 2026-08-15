@@ -1,12 +1,16 @@
 # ruff: noqa: S101
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import pytest
 from dulwich import porcelain
+from pytest import MonkeyPatch
 
 from dotman.errors.plugin_errors import PluginNotFoundError
 from dotman.plugin.installer import PluginInstaller
 from dotman.plugin.manager import PluginManager
+from dotman.plugin.manifest import InstalledPlugin, PluginManifest
 from dotman.plugin.repository import PluginRepository
 
 
@@ -28,79 +32,89 @@ class FailingInstaller(FakeInstaller):
         raise RuntimeError("package installation failed")  # noqa: TRY003
 
 
-def test_install_local_plugin(tmp_path: Path) -> None:
-    # Create a fake plugin repository
-    source_repo = tmp_path / "source-plugin"
-    source_repo.mkdir()
+def plugin_entry_point(
+    name: str = "test-plugin", value: str = "test_plugin:Plugin"
+) -> SimpleNamespace:
+    return SimpleNamespace(
+        name=name,
+        value=value,
+        dist=SimpleNamespace(
+            metadata={
+                "Name": "test-plugin-package",
+                "Version": "1.0.0",
+                "Summary": "A test plugin",
+                "Author": "Aditya",
+            }
+        ),
+    )
 
-    porcelain.init(str(source_repo))
 
-    # Add a minimal plugin manifest
-    manifest = source_repo / "plugin.toml"
-    manifest.write_text(
-        """
-[plugin]
-name = "test-plugin"
+def write_project(path: Path, name: str = "test-plugin-package") -> None:
+    (path / "pyproject.toml").write_text(
+        f'''
+[project]
+name = "{name}"
 version = "1.0.0"
 description = "A test plugin"
-authors = ["Aditya"]
-entry_point = "test_plugin:TestPlugin"
 
-[dotman]
-api_version = "1"
-"""
+[project.entry-points."dotman.plugins"]
+test-plugin = "test_plugin:Plugin"
+'''
     )
 
-    # Commit the manifest
-    porcelain.add(str(source_repo), paths=["plugin.toml"])
-    porcelain.commit(
-        str(source_repo),
-        message=b"Initial plugin",
-    )
 
-    # Directory where Dotman installs plugins
+def test_list_plugins_discovers_package_entry_points(
+    monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
+    manager = PluginManager(tmp_path / "plugins", FakeInstaller())
+    monkeypatch.setattr(manager, "_plugin_entry_points", lambda: [plugin_entry_point()])
+
+    plugins = manager.list_plugins()
+
+    assert [plugin.manifest.name for plugin in plugins] == ["test-plugin"]
+    assert plugins[0].repository is None
+    assert plugins[0].manifest.distribution_name == "test-plugin-package"
+
+
+def test_install_local_plugin_uses_package_metadata(
+    monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
+    source_repo = tmp_path / "source-plugin"
+    source_repo.mkdir()
+    porcelain.init(str(source_repo))
+    write_project(source_repo)
+    porcelain.add(str(source_repo), paths=["pyproject.toml"])
+    porcelain.commit(str(source_repo), message=b"Initial plugin")
+
     plugin_dir = tmp_path / "plugins"
-
     installer = FakeInstaller()
     manager = PluginManager(plugin_dir, installer)
+    expected = InstalledPlugin(None, PluginManifest.from_entry_point(plugin_entry_point()))
+    monkeypatch.setattr(manager, "_get_installed_plugin_by_repository", lambda _repo: expected)
 
-    # Install from local repository
     manifest = manager.install(str(source_repo))
 
     assert manifest.name == "test-plugin"
-    assert manifest.version == "1.0.0"
-
-    # Repository should now exist in plugin directory
-    installed_repo = plugin_dir / "source-plugin"
-
-    assert installed_repo.exists()
-    assert (installed_repo / "plugin.toml").exists()
-    assert installer.installed == [installed_repo.resolve()]
+    assert (plugin_dir / "source-plugin" / "pyproject.toml").exists()
+    assert installer.installed == [(plugin_dir / "source-plugin").resolve()]
 
 
-def test_uninstall_removes_package_and_repository(tmp_path: Path) -> None:
+def test_uninstall_removes_package_and_managed_repository(
+    monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
     plugins_dir = tmp_path / "plugins"
     repository_dir = plugins_dir / "example-repository"
     repository_dir.mkdir(parents=True)
     porcelain.init(str(repository_dir))
-    (repository_dir / "plugin.toml").write_text(
-        """
-[plugin]
-name = "example-plugin"
-distribution_name = "example-plugin-package"
-version = "1.0.0"
-description = "An example plugin"
-authors = ["Aditya"]
-entry_point = "example_plugin:ExamplePlugin"
-"""
-    )
+    write_project(repository_dir)
 
     installer = FakeInstaller()
     manager = PluginManager(plugins_dir, installer)
+    monkeypatch.setattr(manager, "_plugin_entry_points", lambda: [plugin_entry_point()])
 
-    manager.uninstall("example-plugin")
+    manager.uninstall("test-plugin")
 
-    assert installer.uninstalled == ["example-plugin-package"]
+    assert installer.uninstalled == ["test-plugin-package"]
     assert not repository_dir.exists()
 
 
@@ -117,17 +131,8 @@ def test_install_removes_cloned_repository_when_package_installation_fails(
     source_repo = tmp_path / "source-plugin"
     source_repo.mkdir()
     porcelain.init(str(source_repo))
-    (source_repo / "plugin.toml").write_text(
-        """
-[plugin]
-name = "test-plugin"
-version = "1.0.0"
-description = "A test plugin"
-authors = ["Aditya"]
-entry_point = "test_plugin:TestPlugin"
-"""
-    )
-    porcelain.add(str(source_repo), paths=["plugin.toml"])
+    write_project(source_repo)
+    porcelain.add(str(source_repo), paths=["pyproject.toml"])
     porcelain.commit(str(source_repo), message=b"Initial plugin")
 
     plugins_dir = tmp_path / "plugins"
@@ -137,3 +142,54 @@ entry_point = "test_plugin:TestPlugin"
         manager.install(str(source_repo))
 
     assert not (plugins_dir / "source-plugin").exists()
+
+
+def test_broken_plugin_does_not_prevent_other_plugins_from_loading(
+    monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
+    class BrokenPlugin:
+        api_version = "1"
+
+        def register(self, api) -> None:
+            api.add_typer(MagicMock(), name="broken")
+            api.add_validator(lambda _context: None)
+            raise RuntimeError("broken")
+
+    class GoodPlugin:
+        api_version = "1"
+
+        def register(self, api) -> None:
+            api.add_typer(MagicMock(), name="good")
+            api.add_validator(lambda _context: None)
+
+    manager = PluginManager(tmp_path / "plugins", FakeInstaller())
+    monkeypatch.setattr(
+        manager,
+        "list_plugins",
+        lambda: [
+            InstalledPlugin(None, PluginManifest.from_entry_point(plugin_entry_point("broken"))),
+            InstalledPlugin(None, PluginManifest.from_entry_point(plugin_entry_point("good"))),
+        ],
+    )
+    calls = iter(
+        [
+            (
+                BrokenPlugin(),
+                PluginManifest.from_entry_point(plugin_entry_point("broken")).with_api_version("1"),
+            ),
+            (
+                GoodPlugin(),
+                PluginManifest.from_entry_point(plugin_entry_point("good")).with_api_version("1"),
+            ),
+        ]
+    )
+    monkeypatch.setattr(
+        "dotman.plugin.manager.PluginLoader.load_plugin", lambda _self, _manifest: next(calls)
+    )
+
+    root_app = MagicMock()
+    registry = manager.load_plugins(root_app)
+
+    assert len(registry._add_validators) == 1
+    root_app.add_typer.assert_called_once()
+    assert root_app.add_typer.call_args.kwargs == {"name": "good"}

@@ -103,8 +103,8 @@ For example, adding `~/.config/nvim/init.lua` to the `editor` package creates `~
 | `dotman config show` | Print the effective configuration. |
 | `dotman config get KEY` | Print one configuration value. |
 | `dotman config set KEY VALUE` | Validate and persist one configuration value. |
-| `dotman plugin install SOURCE` | Clone a Git plugin repository, validate its manifest, and install its Python package. |
-| `dotman plugin uninstall NAME` | Uninstall a plugin by the `name` in its manifest and remove its managed repository. |
+| `dotman plugin install SOURCE` | Clone a Git plugin repository, install its Python package, and validate its `dotman.plugins` entry point. |
+| `dotman plugin uninstall NAME` | Uninstall a plugin by its `dotman.plugins` entry-point name and remove its managed repository. |
 
 Use `--output rich`, `--output plain`, or `--output json` for supported structured-error renderers.
 
@@ -122,28 +122,13 @@ Paths are expanded when Dotman loads the configuration. Existing configuration f
 
 ## Plugins
 
-A plugin is a Git/Local repository containing an installable Python project alongside a plugin.toml manifest. On startup, Dotman automatically loads all installed plugins, allowing them to register custom typer sub-applications via the PluginAPI.
+A plugin is a Git/Local repository containing an installable Python project. On startup, Dotman discovers installed packages that expose a `dotman.plugins` entry point, then allows them to register custom Typer sub-applications and add validators through `PluginAPI`.
 
-- Every plugin must include a plugin.toml file at its root to define its metadata and entry points.
-```toml title="plugin.toml"
-[plugin]
-name = "example-plugin"
-version = "0.1.0"
-description = "Adds example commands to Dotman"
-authors = ["Your Name"]
-entry_point = "fake_repo.plugin:ExamplePlugin"
-distribution_name = "example-plugin"
-
-[dotman]
-api_version = "1"
-```
-
-- The plugin must contain a `plugin.toml` file at its root to define its metadata and entry points. The plugin must contain a `pyproject.toml` file at its root to define its dependencies.
+- Plugin identity, version, description, and distribution name come from `pyproject.toml`; no separate `plugin.toml` is required. Each entry-point plugin class must declare `api_version = "1"`.
 ```
 fake_repo on  main [!] is 📦 v0.1.0 via 🐍 v3.12.13 
 ❯ tree                                                                      
  .
-├── plugin.toml
 ├── pyproject.toml
 ├── README.md
 ├── src
@@ -153,7 +138,17 @@ fake_repo on  main [!] is 📦 v0.1.0 via 🐍 v3.12.13
 └── uv.lock
 ```
 
-- The specified entry_point must point to a Python class exposing a register(api: PluginAPI) method. Use api.add_typer() to attach your custom CLI commands to the main application.
+- Define the entry point in `pyproject.toml`. The entry point must point to a class exposing a `register(api: PluginAPI)` method. Use `api.add_typer()` to attach your custom CLI commands and `api.add_validator()` for add validation.
+
+```toml title="pyproject.toml"
+[project]
+name = "dotman-example-plugin"
+version = "0.1.0"
+description = "Adds example commands to Dotman"
+
+[project.entry-points."dotman.plugins"]
+example-plugin = "fake_repo.plugin:ExamplePlugin"
+```
 
 ```python
 import typer
@@ -169,6 +164,8 @@ def hello(name: str = "world") -> None:
 
 
 class ExamplePlugin:
+    api_version = "1"
+
     def register(self, api: PluginAPI) -> None:
         api.add_typer(app, name="example")
 ```
@@ -181,7 +178,7 @@ dotman plugin uninstall example-plugin
 ```
 
 > [!CAUTION]
-> If installation fails after cloning, Dotman removes the newly cloned repository. During uninstallation it first removes the Python distribution, then deletes only the matching repository directly inside `plugins_dir`.
+> If installation fails after cloning, Dotman removes the newly cloned repository. A plugin that fails to load or declares an incompatible API version is skipped so that Dotman can still start. During uninstallation Dotman removes the Python distribution, then deletes only the matching repository directly inside `plugins_dir`.
 
 ## Development
 

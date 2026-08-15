@@ -10,7 +10,7 @@ flowchart TB
     CLI --> Plugins[Plugin manager]
     Facade --> Core[Core domain and filesystem code]
     Services --> Core
-    Plugins --> Repos[Plugin repositories and manifests]
+    Plugins --> Repos[Plugin repositories and package metadata]
     Plugins --> API[Plugin API]
     API --> CLI
     Core --> Errors[Dotman errors]
@@ -55,7 +55,7 @@ dotfiles_dir/
 | Services | `core/service` | Coordinate initialization, add, remove, sync, doctor, and profile switching. |
 | Core | `core/add.py`, `core/linker.py`, `core/profile.py`, `core/doctor.py` | Dotfile model, file operations, link status, profiles, and diagnostics. |
 | Configuration | `core/config` | Validated YAML configuration and filesystem constants. |
-| Plugins | `plugin` | Git repositories, manifests, package installation, discovery, and command registration. |
+| Plugins | `plugin` | Git repositories, package metadata, installation, discovery, and command registration. |
 | Errors | `errors` | Typed errors and serializable error payloads. |
 | Rendering | `cli/renderer` | Rich, plain, and JSON error output. |
 
@@ -74,7 +74,7 @@ sequenceDiagram
     U->>C: plugin install SOURCE
     C->>M: install(SOURCE)
     M->>R: clone into plugins_dir
-    M->>M: load and validate plugin.toml
+    M->>M: validate installed dotman.plugins entry point
     M->>I: uv pip install .
     alt package installation fails
         M->>R: remove newly cloned repository
@@ -82,18 +82,18 @@ sequenceDiagram
 
     U->>C: plugin uninstall NAME
     C->>M: uninstall(NAME)
-    M->>M: find unique manifest.name
+    M->>M: find unique entry-point name
     M->>I: uv pip uninstall distribution_name
     M->>R: remove managed repository
 ```
 
-`PluginLoader` imports the class specified by `entry_point` and invokes its `register(api)` method. `PluginAPI` deliberately exposes only Typer-app registration, keeping plugins out of Dotman's internal command wiring.
+`PluginManager` discovers installed package entry points from the `dotman.plugins` group. `PluginLoader` imports the class specified by each entry point, enforces its `api_version`, and invokes its `register(api)` method. A failed plugin is skipped without preventing CLI startup. `PluginAPI` deliberately exposes only Typer-app and add-validator registration, keeping plugins out of Dotman's internal command wiring.
 
 ## Dependency direction
 
 ```text
 CLI ──> public API / services ──> core ──> errors
-CLI ──> plugin manager ──> repositories, manifests, installer, errors
+CLI ──> plugin manager ──> repositories, package metadata, installer, errors
 CLI ──> renderers
 plugins ──> PluginAPI ──> root Typer app
 ```

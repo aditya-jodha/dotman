@@ -10,6 +10,7 @@ import pytest
 from pytest import CaptureFixture, MonkeyPatch
 
 import dotman.cli.app.add as cli
+from dotman.api import Application
 
 
 def make_responses(seq: Iterator[str]):
@@ -153,7 +154,11 @@ def test_add_with_warnings_and_cancel(tmp_path: Path, monkeypatch: MonkeyPatch):
     fake_dotman = MagicMock()
     fake_dotman.add.return_value = fake_operation
 
-    monkeypatch.setattr(cli, "Dotman", lambda: fake_dotman)
+    monkeypatch.setattr(
+        Application,
+        "get_dotman",
+        lambda: fake_dotman,
+    )
     monkeypatch.setattr(cli, "get_user_choice", lambda: False)
 
     with patch.object(cli.console, "print") as mock_print:
@@ -180,7 +185,11 @@ def test_add_with_warnings_and_continue_commit(
     fake_dotman = MagicMock()
     fake_dotman.add.return_value = fake_operation
 
-    monkeypatch.setattr(cli, "Dotman", lambda: fake_dotman)
+    monkeypatch.setattr(
+        Application,
+        "get_dotman",
+        lambda: fake_dotman,
+    )
 
     choices = iter([True, True])
     monkeypatch.setattr(cli, "get_user_choice", lambda: next(choices))
@@ -213,7 +222,11 @@ def test_add_with_no_warnings_and_rollback(
     fake_dotman = MagicMock()
     fake_dotman.add.return_value = fake_operation
 
-    monkeypatch.setattr(cli, "Dotman", lambda: fake_dotman)
+    monkeypatch.setattr(
+        Application,
+        "get_dotman",
+        lambda: fake_dotman,
+    )
     monkeypatch.setattr(cli, "get_user_choice", lambda: False)
 
     with patch.object(cli.console, "print") as mock_print:
@@ -244,7 +257,11 @@ def test_add_keyboard_interrupt_on_commit(
     fake_dotman = MagicMock()
     fake_dotman.add.return_value = fake_operation
 
-    monkeypatch.setattr(cli, "Dotman", lambda: fake_dotman)
+    monkeypatch.setattr(
+        Application,
+        "get_dotman",
+        lambda: fake_dotman,
+    )
 
     def raise_keyboard_interrupt():
         raise KeyboardInterrupt

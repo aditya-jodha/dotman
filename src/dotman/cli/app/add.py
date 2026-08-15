@@ -6,7 +6,7 @@ from typing import Any
 
 from rich.console import Console
 
-from dotman import Dotman
+from dotman.api import Application
 
 console = Console()
 
@@ -47,7 +47,7 @@ def add(
         console.print("Package name is required to add a file.", style="red")
         return
 
-    operation = Dotman().add(file, package_name)
+    operation = Application.get_dotman().add(file, package_name)
 
     preview = operation.preview()
 
