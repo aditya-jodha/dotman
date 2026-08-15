@@ -1,6 +1,8 @@
 # ruff: noqa: S101
+from importlib.metadata import EntryPoint
 from pathlib import Path
 from types import SimpleNamespace
+from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -8,6 +10,7 @@ from dulwich import porcelain
 from pytest import MonkeyPatch
 
 from dotman.errors.plugin_errors import PluginNotFoundError
+from dotman.plugin.api import PluginAPI
 from dotman.plugin.installer import PluginInstaller
 from dotman.plugin.manager import PluginManager
 from dotman.plugin.manifest import InstalledPlugin, PluginManifest
@@ -32,19 +35,20 @@ class FailingInstaller(FakeInstaller):
         raise RuntimeError("package installation failed")  # noqa: TRY003
 
 
-def plugin_entry_point(
-    name: str = "test-plugin", value: str = "test_plugin:Plugin"
-) -> SimpleNamespace:
-    return SimpleNamespace(
-        name=name,
-        value=value,
-        dist=SimpleNamespace(
-            metadata={
-                "Name": "test-plugin-package",
-                "Version": "1.0.0",
-                "Summary": "A test plugin",
-                "Author": "Aditya",
-            }
+def plugin_entry_point(name: str = "test-plugin", value: str = "test_plugin:Plugin") -> EntryPoint:
+    return cast(
+        "EntryPoint",
+        SimpleNamespace(
+            name=name,
+            value=value,
+            dist=SimpleNamespace(
+                metadata={
+                    "Name": "test-plugin-package",
+                    "Version": "1.0.0",
+                    "Summary": "A test plugin",
+                    "Author": "Aditya",
+                }
+            ),
         ),
     )
 
@@ -150,7 +154,7 @@ def test_broken_plugin_does_not_prevent_other_plugins_from_loading(
     class BrokenPlugin:
         api_version = "1"
 
-        def register(self, api) -> None:
+        def register(self, api: PluginAPI) -> None:
             api.add_typer(MagicMock(), name="broken")
             api.add_validator(lambda _context: None)
             raise RuntimeError("broken")
@@ -158,7 +162,7 @@ def test_broken_plugin_does_not_prevent_other_plugins_from_loading(
     class GoodPlugin:
         api_version = "1"
 
-        def register(self, api) -> None:
+        def register(self, api: PluginAPI) -> None:
             api.add_typer(MagicMock(), name="good")
             api.add_validator(lambda _context: None)
 
@@ -190,6 +194,6 @@ def test_broken_plugin_does_not_prevent_other_plugins_from_loading(
     root_app = MagicMock()
     registry = manager.load_plugins(root_app)
 
-    assert len(registry._add_validators) == 1
+    assert len(registry._add_validators) == 1  # pyright: ignore[reportPrivateUsage]
     root_app.add_typer.assert_called_once()
     assert root_app.add_typer.call_args.kwargs == {"name": "good"}

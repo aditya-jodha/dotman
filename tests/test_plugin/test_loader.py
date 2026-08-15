@@ -1,5 +1,6 @@
-# ruff: noqa: S101
+# ruff: noqa: S101,B010
 from types import ModuleType, SimpleNamespace
+from typing import TYPE_CHECKING, cast
 
 import pytest
 from pytest import MonkeyPatch
@@ -7,6 +8,9 @@ from pytest import MonkeyPatch
 from dotman.errors.plugin_errors import PluginRepositoryError
 from dotman.plugin.loader import PluginLoader
 from dotman.plugin.manifest import PluginManifest
+
+if TYPE_CHECKING:
+    from importlib.metadata import EntryPoint
 
 
 class ExamplePlugin:
@@ -29,7 +33,7 @@ def manifest(entry_point: str = "example_plugin:ExamplePlugin") -> PluginManifes
 
 def test_load_plugin_enforces_api_version(monkeypatch: MonkeyPatch) -> None:
     module = ModuleType("example_plugin")
-    module.ExamplePlugin = ExamplePlugin
+    setattr(module, "ExamplePlugin", ExamplePlugin)
     monkeypatch.setattr("dotman.plugin.loader.importlib.import_module", lambda _name: module)
 
     plugin, loaded_manifest = PluginLoader().load_plugin(manifest())
@@ -40,7 +44,7 @@ def test_load_plugin_enforces_api_version(monkeypatch: MonkeyPatch) -> None:
 
 def test_load_plugin_rejects_incompatible_api_version(monkeypatch: MonkeyPatch) -> None:
     module = ModuleType("example_plugin")
-    module.ExamplePlugin = IncompatiblePlugin
+    setattr(module, "ExamplePlugin", IncompatiblePlugin)
     monkeypatch.setattr("dotman.plugin.loader.importlib.import_module", lambda _name: module)
 
     with pytest.raises(PluginRepositoryError, match="unsupported API version"):
@@ -64,4 +68,4 @@ def test_load_manifest_rejects_missing_distribution_metadata() -> None:
     entry_point = SimpleNamespace(name="example", value="example:Plugin", dist=None)
 
     with pytest.raises(PluginRepositoryError, match="Invalid plugin package metadata"):
-        PluginLoader().load_manifest(entry_point)
+        PluginLoader().load_manifest(cast("EntryPoint", entry_point))

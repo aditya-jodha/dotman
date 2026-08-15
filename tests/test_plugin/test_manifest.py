@@ -1,11 +1,13 @@
 # ruff: noqa: S101
 
+from importlib.metadata import EntryPoint
 from types import SimpleNamespace
+from typing import cast
 
 from dotman.plugin.manifest import PluginManifest
 
 
-def entry_point(**metadata: str) -> SimpleNamespace:
+def entry_point(**metadata: str) -> EntryPoint:
     values = {
         "Name": "example-distribution",
         "Version": "0.1.0",
@@ -13,10 +15,13 @@ def entry_point(**metadata: str) -> SimpleNamespace:
         "Author": "Aditya",
     }
     values.update(metadata)
-    return SimpleNamespace(
-        name="example",
-        value="example_plugin:ExamplePlugin",
-        dist=SimpleNamespace(metadata=values),
+    return cast(
+        "EntryPoint",
+        SimpleNamespace(
+            name="example",
+            value="example_plugin:ExamplePlugin",
+            dist=SimpleNamespace(metadata=values),
+        ),
     )
 
 
