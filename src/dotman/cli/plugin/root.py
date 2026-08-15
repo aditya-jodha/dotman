@@ -24,10 +24,12 @@ def install(source: str) -> None:
 @handle_errors
 def uninstall(
     name: str = typer.Argument(
-        ..., help="Plugin name from plugin.toml.", autocompletion=complete_plugins
+        ...,
+        help="Plugin name from its dotman.plugins entry point.",
+        autocompletion=complete_plugins,
     ),
 ) -> None:
-    """Uninstall a plugin by the name in its plugin.toml manifest."""
+    """Uninstall a plugin by its dotman.plugins entry-point name."""
     cgf = DotmanConfig.load()
     manager = PluginManager(
         plugins_dir=cgf.plugins_dir,

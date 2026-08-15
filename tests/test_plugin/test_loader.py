@@ -1,5 +1,4 @@
-# ruff: noqa: S101
-from pathlib import Path
+# ruff: noqa: S101,B010
 from types import ModuleType, SimpleNamespace
 from typing import TYPE_CHECKING, cast
 
@@ -11,11 +10,15 @@ from dotman.plugin.loader import PluginLoader
 from dotman.plugin.manifest import PluginManifest
 
 if TYPE_CHECKING:
-    from dotman.plugin.repository import PluginRepository
+    from importlib.metadata import EntryPoint
 
 
 class ExamplePlugin:
-    pass
+    api_version = "1"
+
+
+class IncompatiblePlugin:
+    api_version = "2"
 
 
 def manifest(entry_point: str = "example_plugin:ExamplePlugin") -> PluginManifest:
@@ -28,36 +31,29 @@ def manifest(entry_point: str = "example_plugin:ExamplePlugin") -> PluginManifes
     )
 
 
-def loader(tmp_path: Path) -> PluginLoader:
-    repository = cast("PluginRepository", SimpleNamespace(path=tmp_path))
-    return PluginLoader(repository)
-
-
-def test_load_manifest_and_plugin(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    (tmp_path / "plugin.toml").write_text(
-        """
-[plugin]
-name = "example"
-version = "1.0.0"
-description = "Example plugin"
-authors = ["Example"]
-entry_point = "example_plugin:ExamplePlugin"
-"""
-    )
+def test_load_plugin_enforces_api_version(monkeypatch: MonkeyPatch) -> None:
     module = ModuleType("example_plugin")
-    module.__dict__["ExamplePlugin"] = ExamplePlugin
+    setattr(module, "ExamplePlugin", ExamplePlugin)
     monkeypatch.setattr("dotman.plugin.loader.importlib.import_module", lambda _name: module)
 
-    loaded_manifest = loader(tmp_path).load_manifest()
-    plugin = loader(tmp_path).load_plugin(loaded_manifest)
+    plugin, loaded_manifest = PluginLoader().load_plugin(manifest())
 
-    assert loaded_manifest.name == "example"
     assert isinstance(plugin, ExamplePlugin)
+    assert loaded_manifest.api_version == "1"
+
+
+def test_load_plugin_rejects_incompatible_api_version(monkeypatch: MonkeyPatch) -> None:
+    module = ModuleType("example_plugin")
+    setattr(module, "ExamplePlugin", IncompatiblePlugin)
+    monkeypatch.setattr("dotman.plugin.loader.importlib.import_module", lambda _name: module)
+
+    with pytest.raises(PluginRepositoryError, match="unsupported API version"):
+        PluginLoader().load_plugin(manifest())
 
 
 @pytest.mark.parametrize("entry_point", ["missing-separator", "module:MissingClass"])
 def test_load_entry_point_rejects_invalid_targets(
-    monkeypatch: MonkeyPatch, tmp_path: Path, entry_point: str
+    monkeypatch: MonkeyPatch, entry_point: str
 ) -> None:
     if ":" in entry_point:
         monkeypatch.setattr(
@@ -65,9 +61,11 @@ def test_load_entry_point_rejects_invalid_targets(
         )
 
     with pytest.raises(PluginRepositoryError):
-        loader(tmp_path).load_entry_point(manifest(entry_point))
+        PluginLoader().load_entry_point(manifest(entry_point))
 
 
-def test_load_manifest_rejects_missing_file(tmp_path: Path) -> None:
-    with pytest.raises(PluginRepositoryError, match="Plugin manifest not found"):
-        loader(tmp_path).load_manifest()
+def test_load_manifest_rejects_missing_distribution_metadata() -> None:
+    entry_point = SimpleNamespace(name="example", value="example:Plugin", dist=None)
+
+    with pytest.raises(PluginRepositoryError, match="Invalid plugin package metadata"):
+        PluginLoader().load_manifest(cast("EntryPoint", entry_point))

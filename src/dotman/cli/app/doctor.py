@@ -2,7 +2,7 @@ from rich.console import Console
 from rich.progress import Progress
 from rich.table import Table
 
-from dotman import Dotman
+from dotman.api import Application
 from dotman.core.doctor import DoctorStatus, SummeryReport
 
 console = Console()
@@ -16,7 +16,7 @@ def doctor(detail: bool):
     table.add_column("Status", justify="center", no_wrap=True)
     table.add_column("Message", justify="left", style="white")
 
-    checks, report = Dotman().doctor(detail=detail)
+    checks, report = Application.get_dotman().doctor(detail=detail)
 
     for check in checks:
         if check.status == DoctorStatus.OK:

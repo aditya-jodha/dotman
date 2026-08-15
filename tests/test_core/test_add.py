@@ -49,6 +49,7 @@ def setup_addfiles(tmp_path: Path, file_name: str = "test.txt", package: str = "
         file=file,
         package=package,
         logbook=logbook,
+        validation=MagicMock(),
     )
 
 

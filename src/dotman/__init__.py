@@ -1,6 +1,6 @@
 from importlib.metadata import PackageNotFoundError, metadata, version
 
-from dotman.api import Dotman
+from dotman.api import Application, Dotman
 from dotman.core.config.constants import DOTMAN
 from dotman.plugin.api import DotmanPlugin
 
@@ -13,6 +13,7 @@ except PackageNotFoundError:
 
 
 __all__ = [
+    "Application",
     "Dotman",
     "DotmanPlugin",
 ]

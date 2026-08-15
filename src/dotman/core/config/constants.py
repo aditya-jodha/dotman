@@ -11,6 +11,7 @@ CONFIG_ENV_VAR: Final = "DOTMAN_CONFIG"
 
 DOTMAN_BACKUP_DIR: Final = ".dotman_backup"
 
+SUPPORTED_API_VERSION = "1"
 
 # =============================================================================
 # Plugins

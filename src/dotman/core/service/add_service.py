@@ -7,9 +7,12 @@ from dotman.cli.common_func import sanitize_package_name
 from dotman.cli.tree_builder import print_beautiful_directory
 from dotman.core.add import AddFiles, RollbackJournal, SymlinkCheck, SymlinkStatus
 from dotman.core.get_internal_data import DotmanMetadata
+from dotman.plugin.validation import ValidationRegistry
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from rich.tree import Tree
 
 
 @dataclass(slots=True)
@@ -26,6 +29,7 @@ class AddOperation:
         home_dir: Path,
         dotfiles_dir: Path,
         profile: str,
+        validation: ValidationRegistry | None = None,
     ) -> None:
         self.home_dir = home_dir
         self.dotfiles_dir = dotfiles_dir
@@ -45,6 +49,7 @@ class AddOperation:
             home_dir=self.home_dir,
             dotfiles_dir=self.dotfiles_dir,
             logbook=self.journal,
+            validation=validation or ValidationRegistry(),
         )
 
     def validate(self):
@@ -76,5 +81,5 @@ class AddOperation:
         self.journal.rollback()
         self.add_files.delete_empty_package()
 
-    def tree(self):
+    def tree(self) -> Tree:
         return print_beautiful_directory(self.add_files.profile_root)
