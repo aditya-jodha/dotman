@@ -1,4 +1,5 @@
 # ruff: noqa: S101,B010
+from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from typing import TYPE_CHECKING, cast
 
@@ -6,6 +7,7 @@ import pytest
 from pytest import MonkeyPatch
 
 from dotman.errors.plugin_errors import PluginRepositoryError
+from dotman.plugin.environment import PluginEnvironment
 from dotman.plugin.loader import PluginLoader
 from dotman.plugin.manifest import PluginManifest
 
@@ -31,12 +33,16 @@ def manifest(entry_point: str = "example_plugin:ExamplePlugin") -> PluginManifes
     )
 
 
-def test_load_plugin_enforces_api_version(monkeypatch: MonkeyPatch) -> None:
+def test_load_plugin_enforces_api_version(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
     module = ModuleType("example_plugin")
     setattr(module, "ExamplePlugin", ExamplePlugin)
     monkeypatch.setattr("dotman.plugin.loader.importlib.import_module", lambda _name: module)
 
-    plugin, loaded_manifest = PluginLoader().load_plugin(manifest())
+    environment = PluginEnvironment(tmp_path / "plugins")
+
+    loader = PluginLoader(environment)
+
+    plugin, loaded_manifest = loader.load_plugin(manifest())
 
     assert isinstance(plugin, ExamplePlugin)
     assert loaded_manifest.api_version == "1"

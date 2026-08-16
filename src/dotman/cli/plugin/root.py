@@ -10,7 +10,7 @@ plugin_app = typer.Typer()
 
 
 @plugin_app.command()
-@handle_errors
+# @handle_errors
 def install(source: str) -> None:
     cgf = DotmanConfig.load()
     manager = PluginManager(
