@@ -7,11 +7,38 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            binary: dotman-linux-x86_64
+
+          - os: ubuntu-24.04-arm
+            binary: dotman-linux-arm64
+
+          - os: macos-13
+            binary: dotman-darwin-x86_64
+
+          - os: macos-latest
+            binary: dotman-darwin-arm64
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Say hello
-        run: echo "Building dotman ${{ github.ref_name }}"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Build binary
+        run: |
+          echo "Building ${{ matrix.binary }}"
