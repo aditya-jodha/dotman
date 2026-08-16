@@ -35,7 +35,7 @@ class PluginRepository:
         try:
             porcelain.clone(url, str(target_dir))
         except OSError as e:
-            raise PluginRepositoryError(f"Failed to clone {url} into {target_dir}") from e
+            raise PluginRepositoryError(f"Failed to clone {url} into {target_dir}: {e}") from e
 
         return cls(target_dir)
 
@@ -44,14 +44,14 @@ class PluginRepository:
         try:
             porcelain.fetch(self.repo, remote)
         except OSError as e:
-            raise PluginRepositoryError(f"Failed to fetch from {remote}") from e
+            raise PluginRepositoryError(f"Failed to fetch from {remote}: {e}") from e
 
     def checkout(self, ref: str = "main") -> None:
         """Checkout a Git reference."""
         try:
             porcelain.update_head(self.repo, ref)
         except OSError as e:
-            raise PluginRepositoryError(f"Failed to checkout {ref}") from e
+            raise PluginRepositoryError(f"Failed to checkout {ref}: {e}") from e
 
     def current_commit(self) -> str:
         """Return the current commit hash."""
@@ -60,6 +60,6 @@ class PluginRepository:
         except Exception as e:
             path = getattr(self, "path", None)
             raise PluginRepositoryError(
-                "Failed to get current commit",
+                "Failed to get current commit: repository not found at path {path}",
                 path=path,
             ) from e
