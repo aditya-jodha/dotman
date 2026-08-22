@@ -39,6 +39,7 @@ def test_load_plugin_enforces_api_version(tmp_path: Path, monkeypatch: MonkeyPat
     monkeypatch.setattr("dotman.plugin.loader.importlib.import_module", lambda _name: module)
 
     environment = PluginEnvironment(tmp_path / "plugins")
+    monkeypatch.setattr(PluginLoader, "_add_site_packages_to_path", lambda _self: None)
 
     loader = PluginLoader(environment)
 
@@ -48,30 +49,47 @@ def test_load_plugin_enforces_api_version(tmp_path: Path, monkeypatch: MonkeyPat
     assert loaded_manifest.api_version == "1"
 
 
-def test_load_plugin_rejects_incompatible_api_version(monkeypatch: MonkeyPatch) -> None:
+def test_load_plugin_rejects_incompatible_api_version(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     module = ModuleType("example_plugin")
     setattr(module, "ExamplePlugin", IncompatiblePlugin)
-    monkeypatch.setattr("dotman.plugin.loader.importlib.import_module", lambda _name: module)
 
-    with pytest.raises(PluginRepositoryError, match="unsupported API version"):
-        PluginLoader().load_plugin(manifest())
+    monkeypatch.setattr(
+        "dotman.plugin.loader.importlib.import_module",
+        lambda _name: module,
+    )
+
+    environment = PluginEnvironment(tmp_path)
+    monkeypatch.setattr(PluginLoader, "_add_site_packages_to_path", lambda _self: None)
+
+    with pytest.raises(
+        PluginRepositoryError,
+        match="unsupported API version",
+    ):
+        PluginLoader(environment).load_plugin(manifest())
 
 
 @pytest.mark.parametrize("entry_point", ["missing-separator", "module:MissingClass"])
 def test_load_entry_point_rejects_invalid_targets(
-    monkeypatch: MonkeyPatch, entry_point: str
+    tmp_path: Path, monkeypatch: MonkeyPatch, entry_point: str
 ) -> None:
     if ":" in entry_point:
         monkeypatch.setattr(
             "dotman.plugin.loader.importlib.import_module", lambda _name: ModuleType("module")
         )
 
+    environment = PluginEnvironment(tmp_path)
+    monkeypatch.setattr(PluginLoader, "_add_site_packages_to_path", lambda _self: None)
+
     with pytest.raises(PluginRepositoryError):
-        PluginLoader().load_entry_point(manifest(entry_point))
+        PluginLoader(environment).load_entry_point(manifest(entry_point))
 
 
-def test_load_manifest_rejects_missing_distribution_metadata() -> None:
+def test_load_manifest_rejects_missing_distribution_metadata(tmp_path: Path) -> None:
     entry_point = SimpleNamespace(name="example", value="example:Plugin", dist=None)
+    environment = PluginEnvironment(tmp_path)
 
     with pytest.raises(PluginRepositoryError, match="Invalid plugin package metadata"):
-        PluginLoader().load_manifest(cast("EntryPoint", entry_point))
+        PluginLoader(environment).load_manifest(cast("EntryPoint", entry_point))

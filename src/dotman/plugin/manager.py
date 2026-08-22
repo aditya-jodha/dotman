@@ -66,8 +66,7 @@ class PluginManager:
             self.installer.install(repository)
             manifest = self._get_installed_plugin_by_repository(repository).manifest
         except Exception:
-            # shutil.rmtree(target_dir, ignore_errors=True)
-            # TODO FIXME : will fix later
+            shutil.rmtree(target_dir, ignore_errors=True)
             logging.getLogger(__name__).warning(
                 "Failed to install the repo WILL NOT DELETE IT AS FOR TESTING PURPOSE: %s",
                 target_dir,

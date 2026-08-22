@@ -71,12 +71,19 @@ def test_list_plugins_discovers_package_entry_points(
     monkeypatch: MonkeyPatch, tmp_path: Path
 ) -> None:
     manager = PluginManager(tmp_path / "plugins", FakeInstaller())
-    monkeypatch.setattr(manager, "_plugin_entry_points", lambda: [plugin_entry_point()])
+    repository_dir = manager.plugins_dir / "example-repository"
+    repository_dir.mkdir()
+    porcelain.init(str(repository_dir))
+    monkeypatch.setattr(
+        manager,
+        "_plugin_entry_points",
+        lambda _environment: [plugin_entry_point()],
+    )
 
     plugins = manager.list_plugins()
 
     assert [plugin.manifest.name for plugin in plugins] == ["test-plugin"]
-    assert plugins[0].repository is None
+    assert plugins[0].repository.path == repository_dir
     assert plugins[0].manifest.distribution_name == "test-plugin-package"
 
 
@@ -93,7 +100,10 @@ def test_install_local_plugin_uses_package_metadata(
     plugin_dir = tmp_path / "plugins"
     installer = FakeInstaller()
     manager = PluginManager(plugin_dir, installer)
-    expected = InstalledPlugin(None, PluginManifest.from_entry_point(plugin_entry_point()))
+    expected = InstalledPlugin(
+        cast("PluginRepository", SimpleNamespace(path=plugin_dir / "source-plugin")),
+        PluginManifest.from_entry_point(plugin_entry_point()),
+    )
     monkeypatch.setattr(manager, "_get_installed_plugin_by_repository", lambda _repo: expected)
 
     manifest = manager.install(str(source_repo))
@@ -114,7 +124,11 @@ def test_uninstall_removes_package_and_managed_repository(
 
     installer = FakeInstaller()
     manager = PluginManager(plugins_dir, installer)
-    monkeypatch.setattr(manager, "_plugin_entry_points", lambda: [plugin_entry_point()])
+    monkeypatch.setattr(
+        manager,
+        "_plugin_entry_points",
+        lambda _environment: [plugin_entry_point()],
+    )
 
     manager.uninstall("test-plugin")
 
@@ -167,12 +181,22 @@ def test_broken_plugin_does_not_prevent_other_plugins_from_loading(
             api.add_validator(lambda _context: None)
 
     manager = PluginManager(tmp_path / "plugins", FakeInstaller())
+    broken_repository = cast(
+        "PluginRepository", SimpleNamespace(path=tmp_path / "broken-repository")
+    )
+    good_repository = cast("PluginRepository", SimpleNamespace(path=tmp_path / "good-repository"))
     monkeypatch.setattr(
         manager,
         "list_plugins",
         lambda: [
-            InstalledPlugin(None, PluginManifest.from_entry_point(plugin_entry_point("broken"))),
-            InstalledPlugin(None, PluginManifest.from_entry_point(plugin_entry_point("good"))),
+            InstalledPlugin(
+                broken_repository,
+                PluginManifest.from_entry_point(plugin_entry_point("broken")),
+            ),
+            InstalledPlugin(
+                good_repository,
+                PluginManifest.from_entry_point(plugin_entry_point("good")),
+            ),
         ],
     )
     calls = iter(
