@@ -1,0 +1,9 @@
+export default {
+  ignores: [
+    "**/.venv/**",
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/dist/**",
+    "**/build/**",
+  ],
+};

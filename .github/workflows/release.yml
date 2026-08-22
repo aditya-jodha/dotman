@@ -5,6 +5,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -26,19 +29,66 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Setup environment and dependencies
+        uses: ./.github/actions/setup-env
         with:
           python-version: "3.12"
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-
-      - name: Install dependencies
-        run: uv sync --all-groups
-
       - name: Build binary
         run: |
-          echo "Building ${{ matrix.binary }}"
+          uv run pyinstaller \
+            --name "${{ matrix.binary }}" \
+            --onefile \
+            --hidden-import=shellingham.posix \
+            src/dotman/__cli__.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.binary }}
+          path: dist/${{ matrix.binary }}
+          retention-days: 1
+
+  publish-release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all binaries
+        uses: actions/download-artifact@v8
+        with:
+          path: binaries
+          merge-multiple: true
+
+      - name: Generate checksums
+        working-directory: binaries
+        run: |
+          set -euo pipefail
+          
+          shopt -s nullglob
+          binaries=(dotman-*)
+          
+          # Guard clause: Ensure exactly 4 binaries were downloaded
+          if (( ${#binaries[@]} != 4 )); then
+            echo "Error: Expected 4 binaries, found ${#binaries[@]}" >&2
+            printf '%s\n' "${binaries[@]}"
+            exit 1
+          fi
+          
+          sha256sum "${binaries[@]}" > checksums.sha256
+          
+          echo "Release files:"
+          ls -lh
+          
+          echo
+          echo "Checksums:"
+          cat checksums.sha256
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            binaries/dotman-*
+            binaries/checksums.sha256

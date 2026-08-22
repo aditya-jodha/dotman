@@ -18,6 +18,9 @@ dependencies = [
 [project.scripts]
 dotman = "dotman.__cli__:main"
 
+[tool.typer]
+main = "dotman.__cli__:main"
+
 [build-system]
 requires = ["uv_build>=0.12.0,<0.13.0"]
 build-backend = "uv_build"
@@ -31,9 +34,6 @@ dev = [
     "ruff>=0.15.16",
     "ty>=0.0.54",
 ]
-
-[tool.typer]
-main = "dotman.__cli__:main"
 
 # --- Linting & Formatting (Ruff) ---
 
@@ -70,8 +70,3 @@ omit = [
 exclude_also = [
     'if __name__ == "__main__":',
 ]
-# uv run pyinstaller \
-#     --name dotman \
-#     --onefile \
-#     --hidden-import=shellingham.posix \
-#     src/dotman/__cli__.py

@@ -2,8 +2,7 @@
 
 Dotman is a Python CLI for storing dotfiles by profile and package, then linking them back into a home directory. It also provides profile switching, diagnostics, structured error output, and installable command plugins.
 
-https://github.com/user-attachments/assets/e07f0579-8d2d-42e5-bc16-0a537472da9c
-
+[GitHub](https://github.com/user-attachments/assets/e07f0579-8d2d-42e5-bc16-0a537472da9c)
 
 <div align="center">
 
@@ -95,7 +94,7 @@ For example, adding `~/.config/nvim/init.lua` to the `editor` package creates `~
 | `dotman add FILE --package NAME` | Move a file or directory from the configured home directory into the active profile; confirm to commit or roll back. |
 | `dotman remove FILE` | Remove a managed file from the active profile and clean up empty package directories. |
 | `dotman sync [--package NAME] [--dry-run]` | Create, repair, or preview symlinks for the active profile. Existing conflicting targets are backed up under `~/.dotman_backup`. |
-| `dotman doctor [-a|--all]` | Report dotfiles-directory, package, permission, and symlink health. `--all` includes healthy links. |
+| `dotman doctor [-a\|--all]` | Report dotfiles-directory, package, permission, and symlink health. `--all` includes healthy links. |
 | `dotman profile create NAME` | Create an empty profile. |
 | `dotman profile use [NAME]` | Switch profiles, unlinking the old profile and linking the new one. Without a name, it lists profiles. |
 | `dotman profile delete NAME` | Delete an empty profile. |
@@ -125,7 +124,8 @@ Paths are expanded when Dotman loads the configuration. Existing configuration f
 A plugin is a Git/Local repository containing an installable Python project. On startup, Dotman discovers installed packages that expose a `dotman.plugins` entry point, then allows them to register custom Typer sub-applications and add validators through `PluginAPI`.
 
 - Plugin identity, version, description, and distribution name come from `pyproject.toml`; no separate `plugin.toml` is required. Each entry-point plugin class must declare `api_version = "1"`.
-```
+
+```text
 fake_repo on  main [!] is 📦 v0.1.0 via 🐍 v3.12.13 
 ❯ tree                                                                      
  .
