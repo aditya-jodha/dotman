@@ -9,6 +9,7 @@ import subprocess
 from typing import TYPE_CHECKING
 
 from dotman.errors.plugin_errors import PluginInstallationError
+from dotman.plugin.environment import PluginEnvironment
 
 if TYPE_CHECKING:
     from dotman.plugin.repository import PluginRepository
@@ -18,15 +19,30 @@ class PluginInstaller:
     """Installs and manages the Python package of a plugin."""
 
     def install(self, repository: PluginRepository) -> None:
-        """Install a plugin Python package from its repository."""
+        """Create an isolated environment and install the plugin package."""
         uv_path = self._find_uv
+        environment = PluginEnvironment(repository.path)
 
         try:
-            subprocess.run(  # noqa: S603 - executable resolved via shutil.which()
-                [uv_path, "pip", "install", "."],
+            subprocess.run(  # noqa: S603
+                [uv_path, "venv", str(environment.environment_path)],
                 cwd=repository.path,
                 check=True,
             )
+
+            subprocess.run(  # noqa: S603
+                [
+                    uv_path,
+                    "pip",
+                    "install",
+                    "--python",
+                    str(environment.python),
+                    ".",
+                ],
+                cwd=repository.path,
+                check=True,
+            )
+
         except (OSError, subprocess.CalledProcessError) as e:
             raise PluginInstallationError(
                 f"Failed to install plugin from {repository.path}",

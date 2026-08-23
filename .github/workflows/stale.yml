@@ -1,0 +1,38 @@
+name: Mark stale pull requests
+
+on:
+  schedule:
+    - cron: "30 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Mark stale pull requests
+        uses: actions/stale@v11
+        with:
+          stale-pr-label: stale
+          days-before-stale: 30
+          days-before-close: 14
+
+          stale-pr-message: >
+            This pull request has been inactive for 30 days and has been
+            marked as stale. It will be closed after 14 more days of
+            inactivity. Feel free to comment if you're still working on it.
+
+          close-pr-message: >
+            This pull request has been inactive for 14 additional days,
+            so it has been closed. Feel free to reopen it if you're still
+            working on it.
+
+          exempt-pr-labels: |
+            pinned
+            security
+            in-progress
+
+          operations-per-run: 100

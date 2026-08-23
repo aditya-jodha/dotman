@@ -22,6 +22,7 @@ assets
 
 # Virtual environments
 .venv/
+node_modules/
 .env/
 
 # IDE/editor configs
@@ -30,3 +31,4 @@ assets
 
 *.logcoverage.xml
 *.xml
+dotman.spec

@@ -6,16 +6,22 @@ from typing import TYPE_CHECKING
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
+from dotman.plugin.environment import PluginEnvironment
+
 if TYPE_CHECKING:
     from importlib.metadata import EntryPoint
 
-    from dotman.plugin.repository import PluginRepository
+    from .repository import PluginRepository
 
 
 @dataclass(frozen=True, slots=True)
 class InstalledPlugin:
-    repository: PluginRepository | None
+    repository: PluginRepository
     manifest: PluginManifest
+
+    @property
+    def environment(self) -> PluginEnvironment:
+        return PluginEnvironment(self.repository.path)
 
 
 @pydantic_dataclass(config=ConfigDict(extra="forbid"))
