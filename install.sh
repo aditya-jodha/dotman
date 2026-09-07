@@ -6,7 +6,7 @@ REPO="aditya-jodha/dotman"
 INSTALL_DIR="${HOME}/.local/bin"
 BINARY_NAME="dotman"
 
-TEMP_FILE=""
+TEMP_DIR=""
 
 # ============================================================
 # Utilities
@@ -26,8 +26,8 @@ command_exists() {
 }
 
 cleanup() {
-    if [[ -n "${TEMP_FILE:-}" ]]; then
-        rm -f "$TEMP_FILE"
+    if [[ -n "${TEMP_DIR:-}" && -d "$TEMP_DIR" ]]; then
+        rm -rf "$TEMP_DIR"
     fi
 }
 
@@ -265,10 +265,10 @@ install_binary() {
     download_url="https://github.com/${REPO}/releases/latest/download/${BINARY}"
     checksum_url="https://github.com/${REPO}/releases/latest/download/checksums.sha256"
 
-    TEMP_FILE="$(mktemp)"
+    TEMP_DIR="$(mktemp -d)"
+    TEMP_FILE="${TEMP_DIR}/${BINARY}"
 
     log "Downloading ${BINARY}..."
-
     download "$download_url" "$TEMP_FILE"
 
     verify_checksum "$TEMP_FILE" "$checksum_url"
