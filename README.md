@@ -12,7 +12,6 @@ Dotman is a Python CLI for storing dotfiles by profile and package, then linking
 
 <div align="center">
 
-
 [![Coverage](https://codecov.io/gh/aditya-jodha/dotman/branch/main/graph/badge.svg)](https://codecov.io/gh/aditya-jodha/dotman)
 [![LICENSE](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/release/python-3120/)
@@ -142,7 +141,6 @@ uvx --from git+https://github.com/aditya-jodha/dotman.git dotman --help
 ### Build from Source
 
 If you want to contribute to the project or work from the latest local codebase, you can build and run Dotman directly from the source:
-
 
 ```bash
 git clone https://github.com/aditya-jodha/dotman.git
