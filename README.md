@@ -1,24 +1,34 @@
+![Logo](./assets/logo.svg)
+
+<div align="center">
+
 # Dotman
 
 Dotman is a Python CLI for storing dotfiles by profile and package, then linking them back into a home directory. It also provides profile switching, diagnostics, structured error output, and installable command plugins.
+
+</div>
 
 [GitHub](https://github.com/user-attachments/assets/e07f0579-8d2d-42e5-bc16-0a537472da9c)
 
 <div align="center">
 
-[![CI](https://github.com/aditya-jodha/dotman/actions/workflows/ci.yml/badge.svg)](https://github.com/aditya-jodha/dotman/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/aditya-jodha/dotman/branch/main/graph/badge.svg)](https://codecov.io/gh/aditya-jodha/dotman)
 [![LICENSE](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
-![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)
+[![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/release/python-3120/)
 
 <!-- uv badge is shown here becaue this tool uses uv as its installation method -->
 
 ![CLI](https://img.shields.io/badge/CLI-yellow?logo=bilibili&logoColor=white)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 
-[![Discord](https://img.shields.io/badge/Discord-blue?logo=Discord&logoColor=white)](https://discord.gg/aditya_jodha)
-[![Static Badge](https://img.shields.io/badge/Reddit-red?style=plastic&logo=reddit&logoColor=white)](https://www.reddit.com/user/Dry_Developer)
 [![Static Badge](https://img.shields.io/badge/GitHub-black?logo=github&logoColor=white)](https://github.com/aditya-jodha)
+
+[![Tests](https://github.com/aditya-jodha/dotman/actions/workflows/test.yml/badge.svg)](https://github.com/aditya-jodha/dotman/actions/workflows/test.yml)
+[![Release](https://github.com/aditya-jodha/dotman/actions/workflows/release.yml/badge.svg)](https://github.com/aditya-jodha/dotman/actions/workflows/release.yml)
+[![stale](https://github.com/aditya-jodha/dotman/actions/workflows/stale.yml/badge.svg)](https://github.com/aditya-jodha/dotman/actions/workflows/stale.yml)
+[![Lint](https://github.com/aditya-jodha/dotman/actions/workflows/lint.yml/badge.svg)](https://github.com/aditya-jodha/dotman/actions/workflows/lint.yml)
+[![Markdown Lint](https://github.com/aditya-jodha/dotman/actions/workflows/markdownlint.yml/badge.svg)](https://github.com/aditya-jodha/dotman/actions/workflows/markdownlint.yml)
+[![Docker](https://github.com/aditya-jodha/dotman/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/aditya-jodha/dotman/actions/workflows/docker-publish.yml)
 
 </div>
 
@@ -42,14 +52,95 @@ Dotman is a Python CLI for storing dotfiles by profile and package, then linking
 
 ## Installation
 
-Dotman requires Python 3.12.13 or later and uses [uv](https://docs.astral.sh/uv/).
+<table>
+  <tr>
+    <!-- Card 1: Points to the ### Binary Installation heading -->
+    <td align="center" width="25%">
+      <a href="#binary-installation" style="text-decoration: none; color: inherit;">
+        <h3>📦 Binary</h3>
+        <p>The easiest way to install.</p>
+      </a>
+    </td>
+    <!-- Card 2: Points to the ### Install via uv Tool heading -->
+    <td align="center" width="25%">
+      <a href="#install-via-uv-tool" style="text-decoration: none; color: inherit;">
+        <h3>🛠️ uv Tool</h3>
+        <p>Install permanently using uv.</p>
+      </a>
+    </td>
+    <!-- Card 3: Points to the ### Run with uvx heading -->
+    <td align="center" width="25%">
+      <a href="#run-with-uvx" style="text-decoration: none; color: inherit;">
+        <h3>⚡ uvx</h3>
+        <p>Run without installing.</p>
+      </a>
+    </td>
+    <!-- Card 4: Points to the ### Build from Source heading -->
+    <td align="center" width="25%">
+      <a href="#build-from-source" style="text-decoration: none; color: inherit;">
+        <h3>💻 Source</h3>
+        <p>For development.</p>
+      </a>
+    </td>
+  </tr>
+</table>
+
+```mermaid
+graph TD
+    Start([Install Dotman]) --> Choice{Choose Method}
+
+    Choice -->|"📦 Standalone Binary"| B1["Run Installer:<br/><code>curl -fsSL https://raw.githubusercontent.com/aditya-jodha/dotman/main/install.sh | bash</code>"]
+    B1 --> Verify
+
+    Choice -->|"🛠️ uv Tool"| UV1["Install permanently:<br/><code>uv tool install git+https://github.com/aditya-jodha/dotman.git</code>"]
+    UV1 --> Verify
+
+    Choice -->|"⚡ uvx"| UV2["Run without installing:<br/><code>uvx --from git+https://github.com/aditya-jodha/dotman.git dotman</code>"]
+    UV2 --> VerifyUVX
+
+    Choice -->|"💻 Source"| G1["Clone repository:<br/><code>git clone https://github.com/aditya-jodha/dotman.git</code>"]
+    G1 --> G2["Install dependencies:<br/><code>cd dotman && uv sync</code>"]
+    G2 --> GVerify["Run development build:<br/><code>uv run dotman --help</code>"]
+
+    Verify["Verify installation:<br/><code>dotman --help</code>"] --> End([Dotman Ready])
+    VerifyUVX["Run Dotman:<br/><code>uvx --from git+https://github.com/aditya-jodha/dotman.git dotman --help</code>"] --> End
+    GVerify --> End
+```
+
+### Binary installation
+
+The easiest way to install Dotman is via the official installation script. It automatically downloads the pre-built binary for your specific operating system and architecture, placing it in your user's local bin directory.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/aditya-jodha/dotman/main/install.sh | bash
+```
+
+Then verify the installation:
+
+```bash
+dotman --help
+```
+
+### Install via uv Tool
+
+Dotman requires Python 3.12.13 or later. If you use [uv](https://docs.astral.sh/uv/) for Python package management, you can install Dotman globally on your system:
 
 ```bash
 uv tool install git+https://github.com/aditya-jodha/dotman.git
 dotman --help
 ```
 
-To work from a checkout instead:
+### Run with uvx
+
+If you prefer not to install anything permanently, you can execute Dotman on the fly directly from the repository using `uvx`:
+
+```bash
+uvx --from git+https://github.com/aditya-jodha/dotman.git dotman --help
+```
+
+### Build from Source
+
+If you want to contribute to the project or work from the latest local codebase, you can build and run Dotman directly from the source:
 
 ```bash
 git clone https://github.com/aditya-jodha/dotman.git
@@ -57,6 +148,8 @@ cd dotman
 uv sync
 uv run dotman --help
 ```
+
+---
 
 ## Quick start
 
@@ -153,7 +246,8 @@ example-plugin = "fake_repo.plugin:ExamplePlugin"
 ```python
 import typer
 
-from dotman.plugin import PluginAPI
+from dotman.plugin import PluginAPI, AddValidationContext
+from errors import DotmanError
 
 app = typer.Typer(help="Example plugin commands.")
 
@@ -163,14 +257,21 @@ def hello(name: str = "world") -> None:
     print(f"Hello, {name}!")
 
 
+def validate_example(cxt: AddValidationContext) -> None:
+    if cxt.package != "example":
+        raise DotmanError("Invalid package name for example plugin.")
+
+
 class ExamplePlugin:
     api_version = "1"
 
     def register(self, api: PluginAPI) -> None:
         api.add_typer(app, name="example")
+        api.add_validator(validate_example)
 ```
 
-Plugins can be managed directly through the core Dotman CLI using Git repository URLs:
+> [!TIP]
+> Plugins can be managed directly through the core Dotman CLI using Git repository URLs:
 
 ```bash
 dotman plugin install https://github.com/example/dotman-example-plugin.git
