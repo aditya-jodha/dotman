@@ -5,6 +5,7 @@ from dotman.core.linker import LinkPair
 from dotman.errors.profile_errors import (
     DirNotEmptyError,
     ProfileAlreadyExistsError,
+    ProfileNameInvalidError,
     ProfileNotFoundError,
 )
 
@@ -15,19 +16,24 @@ class ProfileManager:
         self.profiles_dir: Path = self.dotfiles_dir / InternalFileSystemObject.PROFILES.value
 
     def create_profile(self, name: str | None = None):
+        """Creates a new profile directory.
+        if successful, returns True"""
         if name is None:
             name = "default"
         if self.profile_exists(name):
             raise ProfileAlreadyExistsError(name)
+
         self.profiles_dir.mkdir(exist_ok=True)
-        (self.profiles_dir / name).mkdir(exist_ok=True)
+        self.profile_path(name).mkdir(exist_ok=True)
 
     def delete_profile(self, name: str):
         if not self.profile_exists(name):
             raise ProfileNotFoundError(name)
-        if any((self.profiles_dir / name).iterdir()):
+
+        if any(self.profile_path(name).iterdir()):
             raise DirNotEmptyError(self.profiles_dir)
-        (self.profiles_dir / name).rmdir()
+
+        self.profile_path(name).rmdir()
 
     def list_profiles(self) -> list[str]:
         return [profile.name for profile in self.profiles_dir.iterdir() if profile.is_dir()]
@@ -41,7 +47,19 @@ class ProfileManager:
         return self.profile_path(name).exists()
 
     def profile_path(self, name: str) -> Path:
+        if not self.validate_profile_name(name):
+            raise ProfileNameInvalidError(name)
+
         return self.profiles_dir / name
+
+    @staticmethod
+    def validate_profile_name(name: str) -> bool:
+        return (
+            bool(name)  # Check if the name is not empty
+            and name not in {".", ".."}  # Reject special path components
+            and "/" not in name  # Check if the name is not a path (Unix)
+            and "\\" not in name  # Check if the name is not a path (Windows)
+        )
 
 
 class ProfileScanner:

@@ -10,7 +10,6 @@ from dotman.cli.renderer.base import OutputFormat
 from dotman.cli.renderer.factory import RuntimeState
 from dotman.context import AppContext
 from dotman.core.config.config import DotmanConfig
-from dotman.core.get_internal_data import DotmanMetadata
 from dotman.errors.dotman_error import ExitCode
 from dotman.plugin import PluginManager
 from dotman.plugin.installer import PluginInstaller
@@ -35,7 +34,6 @@ def load_context() -> AppContext:
     return AppContext(
         validation_registry=registry,
         config=config,
-        metadata=DotmanMetadata.load(),
     )
 
 

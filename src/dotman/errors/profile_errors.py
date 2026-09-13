@@ -56,6 +56,14 @@ class ProfileNotFoundError(ProfileError):
         super().__init__(msg, context=ctx)
 
 
+class ProfileNameInvalidError(ProfileError):
+    EXIT_CODE = ExitCode.INVALID_ARGUMENTS
+
+    def __init__(self, name: str) -> None:
+        ctx = ProfileContext(profile_name=name)
+        super().__init__(f"Profile name '{name}' is invalid.", context=ctx)
+
+
 class ProfileMetaDataFileCorruptedError(IntegrityError):
     EXIT_CODE = ExitCode.DATA_CORRUPTED
 

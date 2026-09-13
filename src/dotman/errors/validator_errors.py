@@ -16,7 +16,7 @@ class DotmanProfileNotInitializedError(InitializationError):
     EXIT_CODE = ExitCode.INVALID_ARGUMENTS
 
     def __init__(self) -> None:
-        self.message = "Dotman profile is not initialized\nRun 'dotman profile init' first."
+        self.message = "Dotman profile is not initialized\nRun 'dotman init' first."
         super().__init__(message=self.message)
 
 

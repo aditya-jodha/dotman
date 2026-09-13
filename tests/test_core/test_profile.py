@@ -12,6 +12,7 @@ from dotman.core.profile import ProfileManager, ProfileScanner
 from dotman.errors.profile_errors import (
     DirNotEmptyError,
     ProfileAlreadyExistsError,
+    ProfileNameInvalidError,
     ProfileNotFoundError,
 )
 
@@ -164,6 +165,13 @@ class TestInternalHelpers(BaseFakes):
         switcher = ps.ProfileSwitcher()
         assert switcher._deactivate_profile("x")[0][0] == "unlinked"  # pyright: ignore[reportIndexIssue]
         assert switcher._activate_profile("x")[0][0] == "linked"  # pyright: ignore[reportIndexIssue]
+
+    @pytest.mark.parametrize("name", ["", ".", "..", "../escape", "a/b", r"a\b", "/tmp/profile"])  # noqa: S108
+    def test_invalid_profile_name_is_rejected(self, name: str, dotfiles_dir):
+        pm = ProfileManager(dotfiles_dir)
+
+        with pytest.raises(ProfileNameInvalidError):
+            pm.create_profile(name)
 
 
 class TestProfileSwitchResult:
