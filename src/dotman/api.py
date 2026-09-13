@@ -23,10 +23,12 @@ class Dotman:
         return isinstance(value, Dotman) and self.context.config == value.context.config
 
     def __hash__(self) -> int:
-        return hash((
-            self.__class__,
-            self.context.config,
-        ))
+        return hash(
+            (
+                self.__class__,
+                self.context.config,
+            )
+        )
 
     def doctor(self, detail: bool = False):
         service = DoctorService(
