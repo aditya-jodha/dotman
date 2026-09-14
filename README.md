@@ -56,28 +56,28 @@ Dotman is a Python CLI for storing dotfiles by profile and package, then linking
   <tr>
     <!-- Card 1: Points to the ### Binary Installation heading -->
     <td align="center" width="25%">
-      <a href="#binary-installation" style="text-decoration: none; color: inherit;">
+      <a href="#-binary-installation" style="text-decoration: none; color: inherit;">
         <h3>📦 Binary</h3>
         <p>The easiest way to install.</p>
       </a>
     </td>
     <!-- Card 2: Points to the ### Install via uv Tool heading -->
     <td align="center" width="25%">
-      <a href="#install-via-uv-tool" style="text-decoration: none; color: inherit;">
+      <a href="#-install-via-uv-tool" style="text-decoration: none; color: inherit;">
         <h3>🛠️ uv Tool</h3>
         <p>Install permanently using uv.</p>
       </a>
     </td>
     <!-- Card 3: Points to the ### Run with uvx heading -->
     <td align="center" width="25%">
-      <a href="#run-with-uvx" style="text-decoration: none; color: inherit;">
+      <a href="#-run-with-uvx" style="text-decoration: none; color: inherit;">
         <h3>⚡ uvx</h3>
         <p>Run without installing.</p>
       </a>
     </td>
     <!-- Card 4: Points to the ### Build from Source heading -->
     <td align="center" width="25%">
-      <a href="#build-from-source" style="text-decoration: none; color: inherit;">
+      <a href="#-build-from-source" style="text-decoration: none; color: inherit;">
         <h3>💻 Source</h3>
         <p>For development.</p>
       </a>
