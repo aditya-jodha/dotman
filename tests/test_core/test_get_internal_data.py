@@ -37,12 +37,12 @@ class TestResolveProfile:
 
 
 class TestDotmanMetadata:
-    def test_load_creates_file_if_missing(self, tmp_path: Path):
+    def test_load_not_creates_file_if_missing(self, tmp_path: Path):
         file_path = tmp_path / "meta.yaml"
         md = DotmanMetadata.load(file_path)
         assert md.file_path == file_path
         assert md.current_profile is None
-        assert file_path.exists()
+        assert not file_path.exists()
 
     def test_load_valid_yaml(self, tmp_path: Path):
         file_path = tmp_path / "meta.yaml"

@@ -68,7 +68,8 @@ class TestInitializer:
         dotfiles = tmp_path / "dotfiles"
         dotfiles.mkdir()
         init = Initializer(home, dotfiles)
-        profile_dir = init.create_profile("work")
+        init.create_profile("work")
+        profile_dir = init.dotfiles_dir / InternalFileSystemObject.PROFILES.value / "work"
         assert profile_dir.exists()
         assert profile_dir.name == "work"
         # should be inside dotfiles/profiles

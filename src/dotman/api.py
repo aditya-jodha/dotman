@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from dotman.context import AppContext
+from dotman.core.get_internal_data import DotmanMetadata
 from dotman.core.service.add_service import AddOperation
 
 from .core.service.doctor_service import DoctorService
@@ -19,18 +20,19 @@ class Dotman:
         return f"Dotman(context={self.context!r})"
 
     def __eq__(self, value: object) -> bool:
-        return (
-            isinstance(value, Dotman)
-            and self.context.config == value.context.config
-            and self.context.metadata == value.context.metadata
-        )
+        return isinstance(value, Dotman) and self.context.config == value.context.config
 
     def __hash__(self) -> int:
-        return hash((self.__class__, self.context.config, self.context.metadata))
+        return hash(
+            (
+                self.__class__,
+                self.context.config,
+            )
+        )
 
     def doctor(self, detail: bool = False):
         service = DoctorService(
-            current_profile=self.context.metadata.current_profile,
+            current_profile=DotmanMetadata.current_profile_or_raise(DotmanMetadata.load()),
             detail=detail,
             config=self.context.config,
         )
@@ -42,7 +44,7 @@ class Dotman:
             package=package,
             home_dir=self.context.config.home_dir,
             dotfiles_dir=self.context.config.dotfiles_dir,
-            profile=self.context.metadata.current_profile_or_raise(),
+            profile=DotmanMetadata.current_profile_or_raise(DotmanMetadata.load()),
             validation=self.context.validation_registry,
         )
 

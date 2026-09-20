@@ -165,7 +165,7 @@ class PluginManager:
 
                 plugin.register(api)
                 api._commit()  # pyright: ignore[reportPrivateUsage]
-            except Exception:  # noqa: BLE001 - third-party plugin code must not stop the CLI
+            except Exception:  # third-party plugin code must not stop the CLI
                 logging.getLogger(__name__).warning(
                     "Skipping plugin %s because it failed to load",
                     installed.manifest.name,

@@ -60,9 +60,6 @@ class DotmanMetadata(BaseModel):
 
         data: dict[str, str] = {}
         if not file_path.exists():
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            file_path.touch()
-
             return cls(
                 file_path=file_path,
             )
