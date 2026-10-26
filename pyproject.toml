@@ -8,8 +8,8 @@ authors = [
     { name = "Aditya Pratap Singh Rathore", email = "247943295+aditya-jodha@users.noreply.github.com" },
 ]
 dependencies = [
-    "dulwich>=1.2.17",
-    "pydantic>=2.14.0",
+    "dulwich>=1.2.19",
+    "pydantic>=2.14.1",
     "pyyaml>=6.0.3",
     "rich>=15.0.0",
     "typer>=0.27.3",
@@ -25,7 +25,7 @@ main = "dotman.__cli__:main"
 required-version = ">=0.12.5"
 
 [build-system]
-requires = ["uv_build>=0.13.0,<0.14.0"]
+requires = ["uv_build>=0.13.5,<0.14.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
@@ -34,8 +34,8 @@ dev = [
     "pyright>=1.1.414",
     "pytest>=9.0.3",
     "pytest-cov>=7.1.0",
-    "ruff>=0.17.0",
-    "ty>=0.0.86",
+    "ruff>=0.17.2",
+    "ty>=0.0.91",
 ]
 
 # --- Linting & Formatting (Ruff) ---
