@@ -1,0 +1,44 @@
+name: Update Python dependencies
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-dependencies:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup environment and dependencies
+        uses: ./.github/actions/setup-env
+        with:
+          python-version: "3.12"
+
+      - name: Upgrade Python dependencies
+        run: uv lock --upgrade
+
+      - name: Check for lockfile changes
+        id: lockfile
+        run: |
+          if git diff --quiet -- uv.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create or update dependency pull request
+        if: steps.lockfile.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          base: ${{ github.event.repository.default_branch }}
+          branch: automated/update-python-dependencies
+          commit-message: "chore(deps): update Python dependencies"
+          delete-branch: true
+          title: "chore(deps): update Python dependencies"
+          body: "Updates Python dependencies by upgrading the uv lockfile."
